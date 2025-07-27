@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="main.js"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+
+
+    <h3>Sequence Creation & Exporting</h3>
+    <sp-body id="plugin-body">
+      <h6>Name of bin to create sequences</h6>
+      <input type="text" id="input-bin-name" placeholder="Enter bin name" value="test" />
+      <br/>
+      <h6>Name of black frame at beginning</h6>
+      <input type="text" id="input-black-frame-name" placeholder="Enter black_frame name" value="schwarz_frame" />
+      <br/>
+      <h6>Export base path</h6>
+      <input type="text" id="input-export-base-path" placeholder="I:\2025\2025-festival\converting_dnx\out" value="I:\2025\2025-festival\converting_dnx\out" />
+      <br/>
+      
+      <sp-button id="btnCreateSequences">Create Sequences</sp-button>
+      <sp-button id="btnExportSequences">Export Sequences to ME</sp-button>
+      
+      <div style="margin-top:1em;"></div>
+    </sp-body>
+
+    <h3>Clip Extractor</h3>
+    <sp-body id="plugin-body">
+      <h6>Path to extract clips</h6>
+      <input type="text" id="input-clip-extract-path" placeholder="Enter clip extract path" value="I:\2025\2025-festival\converting_dnx\out" />
+      <br/>
+      <sp-button id="btnExtractClips">Extract Clips</sp-button>
+      <p>Extract each single clip from active sequencer</p>
+    </sp-body>
+
+
+    <footer>
+      <p>KiPro Manager Extension ver1.0.0</p>
+    </footer>
+
+
+  </body>
+</html>
