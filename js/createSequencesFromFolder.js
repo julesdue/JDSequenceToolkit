@@ -74,6 +74,7 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName) {
             // Get clip interpretation (frame rate)
 
             // CURRENT STATUS
+            
             const interp = await projItemFile.getFootageInterpretation();
             const fps = interp.frameRate;
             console.log(`Clip: ${projItemFile.name} | FPS: ${fps}`);

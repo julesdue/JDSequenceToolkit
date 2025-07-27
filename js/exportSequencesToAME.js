@@ -6,7 +6,7 @@ const { sendToMEwithPreset } = require('../src/sendToAMEwithPreset.js');
 const ppro = require("premierepro");
 
 
-async function exportSequencesToAME(sep, binName, exportBasePath) {
+async function exportSequencesToAME(sep, folderName, exportBasePath) {
     // Log start of function
     console.log('exportSequencesToAME called');
 
@@ -23,15 +23,15 @@ async function exportSequencesToAME(sep, binName, exportBasePath) {
     console.log('Root FolderItems: ', rootItem);
     
     // Find the bin by name
-    const binItem = await findProjectFolderByName(rootItem, binName);
-    if (!binItem) {
-        console.error(`Bin not found: ${binName}`);
+    const folderItem = await findProjectFolderByName(rootItem, folderName);
+    if (!folderItem) {
+        console.error(`Folder not found: ${folderName}`);
         return;
     }
-    console.log(`Bin found: ${binItem}`);
+    console.log(`Folder found: ${folderItem}`);
 
-    // Get all sequences in the bin
-    const sequences = await binItem.getItems(); // still not working
+    // Get all sequences in the folder
+    const sequences = await folderItem.getItems(); // still not working
 
     // setup vars for export function
     const presetPath = `D:${sep}JuliansDev${sep}AdobePremierePro${sep}kipromanager${sep}payloads${sep}KiPro_ndxhd-hqx10bit_FHD_8ChMono_48kHz_24bit_23LUFs_ver2-5.epr`;
