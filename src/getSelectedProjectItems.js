@@ -1,4 +1,8 @@
+// global objects
+const ppro = require("premierepro");
+
 async function getSelectedProjectItems() {
+    console.log('getSelectedProjectItems called');
   
     // get active project
     const project = await ppro.Project.getActiveProject();

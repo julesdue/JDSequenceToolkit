@@ -1,24 +1,44 @@
+// global objects
+const ppro = require("premierepro");
+
 async function findProjectFolderByName(folderName) {
-    
-    // get active project
-    const project = await ppro.Project.getActiveProject();    
-    const rootItem = await project.getRootItem();
-
-    // Helper function to recursively search for the folder
-    async function searchFolder(item) {
-        if (item.name === folderName && typeof item.getItems === 'function') {
-            return item;
-        }
-        if (typeof item.getItems === 'function') {
-            const children = await item.getItems();
-            for (const child of children) {
-                const found = await searchFolder(child);
-                if (found) return found;
+    try {
+        console.log(`findProjectFolderByName called with folderName: ${folderName}`);
+        // get active project
+        const project = await ppro.Project.getActiveProject();    
+        const rootItem = await project.getRootItem();
+        // Helper function to recursively search for the folder
+        async function searchFolder(rootItem) {
+            const items = await rootItem.getItems();
+            // Check each item in the folder
+            for (const item of items) {
+                if (item.name === folderName) {
+                    console.log(`Found folder: ${item.name}`);
+                    const folderItem = ppro.FolderItem.cast(item);
+                    if (folderItem) {
+                        return folderItem; // Return as FolderItem
+                    } else {
+                        return null; // Found by name, but not a FolderItem
+                    }
+                }
+                const subFolder = ppro.FolderItem.cast(item);
+                if (subFolder) {
+                    const found = await searchFolder(subFolder);
+                    if (found) {
+                        return found; // Return if found in subfolder
+                    }
+                }
             }
+            return null; // Return null if not found
         }
-        return undefined;
+        const result = await searchFolder(rootItem);
+        if (!result) {
+            throw new Error(`No FolderItem found with name: ${folderName}`);
+        }
+        return result;
+    } catch (err) {
+        console.error('Error in findProjectFolderByName:', err);
+        return null;
     }
-
-    return await searchFolder(rootItem);
 }
 module.exports = { findProjectFolderByName };

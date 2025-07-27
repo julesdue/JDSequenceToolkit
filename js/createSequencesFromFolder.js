@@ -1,118 +1,79 @@
 // import modules
 const { getSelectedProjectItems } = require('../src/getSelectedProjectItems.js');
 const { findProjectFolderByName } = require('../src/findProjectFolderByName.js');
-const { getClipProjectItems } = require('../src/getClipProjectItems.js');
+const { findProjectItemsByName } = require('../src/findProjectItemsByName.js');
 
 // global objects
-const app = require("premierepro");
 const ppro = require("premierepro");
 const uxp = require("uxp");
 
-async function createSequencesFromBinUXP(binName, blackFrameName, payloadsPath, sep) {
+async function createSequencesFromFolder(sep, folderName, blackFrameName) {
     // Log start of function
-    console.log('createSequencesFromBinUXP called');
-    console.log(`Bin name: ${binName}, Black frame name: ${blackFrameName}`);
-
+    console.log('createSequencesFromFolder called');
+    console.log(`Bin name: ${folderName}, Black frame name: ${blackFrameName}`);
 
 
     // Get the current project using UXP API
-    const project = await app.Project.getActiveProject();
-    if (!project) {
-        console.error('No active project found.');
-        return;
-    }
-    console.log('Project object acquired: ', project);
+    const project = await ppro.Project.getActiveProject();
+    console.log('Active project: ', project);
     
 
 
-
-
-
-
-
-
-    const sequence = await project.getActiveSequence();
-    console.log('Active sequence: ', sequence);
-
-    const rootItem = await project.getRootItem();
-    console.log('Root item (should be of type FolderItem): ', rootItem);
-
-    const rootChildren = await rootItem.getItems();
-    console.log('rootChildren [projectItem]: ', rootChildren); // Array of FolderItem or ProjectItem objects
-
-
-    // Find the black frame project item by name among bin's children
-    let projItemBlackFrame = null;
-    for (let i = 0; i < rootChildren.length; i++) {
-        const child = rootChildren[i];
-        if (child.name === blackFrameName) {
-            projItemBlackFrame = child;
-            break;
-        }
-    }
-    if (!projItemBlackFrame) {
-        console.error(`ERROR: Black frame item not found in bin: ${blackFrameName}`);
+    // search for the bin by name
+    let folderObject;
+    try {
+        folderObject = await findProjectFolderByName(folderName);
+        console.log('Found folder object: ', folderObject);
+    } catch (err) {
+        console.error(`Error finding folder "${folderName}":`, err);
         return;
     }
-    console.log('Black frame object: ', projItemBlackFrame);
 
-
-
-    const rootChildrenFolder = await rootItem.getItems();
-    console.log('rootChildrenFolder: ', rootChildrenFolder); // Array of FolderItem or ProjectItem objects
-    // for (let i = 0; i < rootChildrenFolder.length; i++) {
-    //     const castedItem = rootChildrenFolder[i].cast(FolderItem);
-    //     console.log(`FolderItem ${i}: ${castedItem.name}`);
-    // }
-
-    // You need to provide a 'project' object here
-    const folder = await findProjectFolderByName("test");
-    console.log('DEBUG: found folder: ', folder);
-
-    // call this function getClipProjectItem
-    const selectedProjectItems = await getSelectedProjectItems();
-    console.log('DEBUG: first selected projectitem: ', selectedProjectItems[0]);
-
-    // const fold = selectedProjectItems[0].cast(FolderItem);
-    // fold.
-
-    const rootChildren2 = await rootItem.getRootItem();
-    console.log('DEBUG: rootChildren of rootChi ldren: ', rootChildren2);
-
-    // loop through root children to find the bin (match by name only, since type is not present)
-    let bin = null;
-    for (let i = 0; i < rootChildren.length; i++) {
-        const child = rootChildren[i];
-        if (child.name === binName) {
-            bin = child;
-            break;
+    // search for the black frame by name
+    let blackFrameObject;
+    try {
+        blackFrameObject = await findProjectItemsByName(blackFrameName);
+        console.log(`Found blackFrame object: ${blackFrameObject.name}`);
+    } catch (err) {
+        console.error(`Error finding black frame "${blackFrameName.name}":`, err);
+        if (ppro.logError) {
+            ppro.logError(`Error finding black frame "${blackFrameName.name}": ${err && err.message ? err.message : err}`);
         }
-    }
-    if (!bin) {
-        console.error(`ERROR: Bin not found: ${binName}`);
         return;
     }
-    console.log('Bin object: ', bin);
 
 
+    // get children item of my folder
+    const movies = await folderObject.getItems();
+    console.log(`Found ${movies.length} items in folder: ${folderName}`);
 
+    // content type has to be media
+    const mediaItems = [];
+    for (const item of movies) {
+        const clipItem = ppro.ClipProjectItem.cast(item);
+        if (clipItem) {
+            const contentType = await clipItem.getContentType();
+            if (contentType === ppro.Constants.ContentType.MEDIA && contentType !== ppro.Constants.ContentType.SEQUENCE) {
+                mediaItems.push(clipItem);
+            }
+        }
+    }
+    console.log(`${mediaItems.length} of them are type media`);
+    mediaItems.forEach(item => {
+        console.log(`Media projectItem: ${item.name}`);
+    });
 
-
-
-
-
-
-    const movieFiles = await bin.getItems();
-    console.log(`Found ${movieFiles.length} items in bin: ${binName}`);
 
     // Loop to create sequences
     let createdCount = 0;
-    for (let i = 0; i < movieFiles.length; i++) {
-        const projItemFile = movieFiles[i];
+    for (let i = 0; i < mediaItems.length; i++) {
+        const projItemFile = mediaItems[i];
         if (projItemFile && !projItemFile.name.endsWith('_dnx')) {
             console.log(`Processing file: ${projItemFile.name}`);
 
             // Get clip interpretation (frame rate)
+
+            // CURRENT STATUS
             const interp = await projItemFile.getFootageInterpretation();
             const fps = interp.frameRate;
             console.log(`Clip: ${projItemFile.name} | FPS: ${fps}`);
@@ -173,7 +134,7 @@ async function createSequencesFromBinUXP(binName, blackFrameName, payloadsPath, 
             console.log('Finished processing file: ' + projItemFile.name);
         }
     }
-    console.log(`Created ${createdCount} sequences for files in bin: ${binName}`);
+    console.log(`Created ${createdCount} sequences for files in bin: ${folderName}`);
 }
 
-module.exports = { createSequencesFromBinUXP };
+module.exports = { createSequencesFromFolder };
