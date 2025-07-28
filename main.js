@@ -12,6 +12,7 @@ console.log(ppro);
 const { createSequencesFromFolder } = require("./js/createSequencesFromFolder.js");
 const { exportSequencesToAME } = require("./js/exportSequencesToAME.js");
 const { extractClipsFromSequence } = require("./js/extractClipsFromSequence.js");
+const { exportSequenceSelection } = require("./js/exportSequenceSelection.js");
 
 // UXP requires a different way to handle paths and OS-specific separators
 let sep = '/';
@@ -84,5 +85,24 @@ document.querySelector("#btnExtractClips").addEventListener("click", async () =>
   } catch (error) {
     console.error(`Error extracting clips from path: ${clipExtractPath}`, error);
     alert(`Failed to extract clips: ${error.message || error}`);
+  }
+});
+
+
+
+// Listener for export selection button
+document.querySelector("#btnExportSelection").addEventListener("click", async () => {
+  console.log("Export Selection button clicked");
+
+  // Get input values from the UI
+  const exportSelectionPath = document.getElementById("input-inout-extract-path").value;
+  console.log(`Export selection path: ${exportSelectionPath}`);
+
+  try {
+    await exportSequenceSelection(sep, exportSelectionPath);
+    console.log(`Done exporting selection`);
+  } catch (error) {
+    console.error(`Error exporting selection from path: ${exportSelectionPath}`, error);
+    alert(`Failed to export selection: ${error.message || error}`);
   }
 });

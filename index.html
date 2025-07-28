@@ -7,33 +7,53 @@
   <body>
 
 
-    <h3>Sequence Creation & Exporting</h3>
-    <sp-body id="plugin-body">
+    
+    <sp-body id="plugin-body" style="position:relative;">
+      <a href="https://github.com/julesdue/kipromanager" target="_blank" class="info-icon-link" title="More info">
+        <span class="info-icon">i</span>
+      </a>
+      <h3>Sequence Creation & Exporting</h3>
       <h6>Name of bin to create sequences</h6>
       <input type="text" id="input-bin-name" placeholder="Enter bin name" value="test" />
-      <br/>
+      
       <h6>Name of black frame at beginning</h6>
       <input type="text" id="input-black-frame-name" placeholder="Enter black_frame name" value="schwarz_frame" />
-      <br/>
+      
       <h6>Export base path</h6>
       <input type="text" id="input-export-base-path" placeholder="I:\2025\2025-festival\converting_dnx\out" value="I:\2025\2025-festival\converting_dnx\out" />
-      <br/>
+      
       
       <sp-button id="btnCreateSequences">Create Sequences</sp-button>
       <sp-button id="btnExportSequences">Export Sequences to ME</sp-button>
       
-      <div style="margin-top:1em;"></div>
+
     </sp-body>
 
-    <h3>Clip Extractor</h3>
-    <sp-body id="plugin-body">
+    
+    <sp-body id="plugin-body" style="position:relative;">
+      <a href="https://github.com/julesdue/kipromanager" target="_blank" class="info-icon-link" title="More info">
+        <span class="info-icon">i</span>
+      </a>
+      <h3>Clip Extractor</h3>
       <h6>Path to extract clips</h6>
       <input type="text" id="input-clip-extract-path" placeholder="Enter clip extract path" value="I:\2025\2025-festival\converting_dnx\out" />
-      <sp-description>Extract each single clip from active sequencer. Using the medium h264 preset and In/Out points.</sp-description>
+      <sp-description>Extract each single clip from active sequence. Using the medium h264 preset and In/Out points. It looks at cut in between.</sp-description>
       <br/>
       <sp-button id="btnExtractClips">Extract Clips</sp-button>
     </sp-body>
+
     
+    <sp-body id="plugin-body" style="position:relative;">
+      <a href="https://github.com/julesdue/kipromanager" target="_blank" class="info-icon-link" title="More info">
+        <span class="info-icon">i</span>
+      </a>
+      <h3>In/Out-Selection Extractor</h3>
+      <h6>Path to extract clips</h6>
+      <input type="text" id="input-inout-extract-path" placeholder="Enter in/out extract path" value="C:\Users\julia\Desktop\temp" />
+      <sp-description>Extract the selected In/Out range from the active sequence. Uses medium h264 preset.</sp-description>
+      <br/>
+      <sp-button id="btnExportSelection">Export Selection</sp-button>
+    </sp-body>
     
     <br/>
     <br/>
