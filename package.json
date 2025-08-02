@@ -1,7 +1,7 @@
 {
-  "name": "uxp-template-ps-starter",
+  "name": "kipromanager",
   "version": "1.0.0",
-  "description": "Starter template for creating Adobe UXP based-Premiere plugin.",
+  "description": "UXP plugin for prepping and creating files for playback utelizing the hardware AJA KiPro Playback.",
   "author": "Adobe Inc",
   "license": "Apache-2.0"
 }

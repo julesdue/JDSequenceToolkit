@@ -91,7 +91,7 @@ document.querySelector("#btnExtractClips").addEventListener("click", async () =>
 
 
 // Listener for export selection button
-document.querySelector("#btnExportSelection").addEventListener("click", async () => {
+document.querySelector("#btnExportSequenceSelection").addEventListener("click", async () => {
   console.log("Export Selection button clicked");
 
   // Get input values from the UI

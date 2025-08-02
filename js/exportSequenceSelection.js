@@ -35,16 +35,34 @@ async function exportSequenceSelection(sep, exportBasePath) {
     console.log(`Preset path set to: ${presetPath}`);
     const exportArea = false; // true = working area; false = in/out points
 
+    
     // current playhead position
+    // not needed
     const currentPlayheadPosition = await activeSequence.getPlayerPosition();
     console.log('Current playhead position: ', currentPlayheadPosition);
 
     // current selection
+    // not needed
     const currentSelection = await activeSequence.getSelection();
     console.log('Current selection: ', currentSelection);
-
     const itemFromSelection = await currentSelection.getItems();
     console.log('Item from selection: ', itemFromSelection);
+
+
+    // get in point of sequence
+    const inPoint = await activeSequence.getInPoint();
+    console.log('In point: ', inPoint.seconds, ' sec');
+
+    // get video track 
+    const videoTrack = await activeSequence.getVideoTrack(videoTrackNumber);
+    console.log('Video track: ', videoTrack);
+
+    const videoTrackItems = await videoTrack.getTrackItems(1, false);
+    console.log('Video track items: ', videoTrackItems);
+
+    // get video component chain
+    const videoComponentChain = await videoTrackItems[0].VideoClipTrackItem(0);
+    console.log('Video component chain: ', videoComponentChain);
 
     const itemName = await itemFromSelection[0].getName();
     // Remove file extension and add suffix "_extracted"
