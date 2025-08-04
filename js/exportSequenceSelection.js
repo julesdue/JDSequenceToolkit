@@ -3,6 +3,8 @@ const { exportWithPreset } = require('../src/exportWithPreset.js');
 
 // global objects
 const ppro = require("premierepro");
+const { localFileSystem, types } = require('uxp').storage;
+
 
 async function exportSequenceSelection(sep, exportBasePath) {
     console.log('exportSequenceSelection called');
@@ -51,7 +53,8 @@ async function exportSequenceSelection(sep, exportBasePath) {
 
     // get in point of sequence
     const inPoint = await activeSequence.getInPoint();
-    console.log('In point: ', inPoint.seconds, ' sec');
+    const outPoint = await activeSequence.getOutPoint();
+    console.log('Current InPoint: ', inPoint.seconds, ' sec, OutPoint: ', outPoint.seconds, ' sec');
 
     // get video track 
     const videoTrack = await activeSequence.getVideoTrack(videoTrackNumber);
@@ -61,26 +64,54 @@ async function exportSequenceSelection(sep, exportBasePath) {
     console.log('Video track items: ', videoTrackItems);
 
     // get video component chain
-    const videoComponentChain = await videoTrackItems[0].VideoClipTrackItem(0);
-    console.log('Video component chain: ', videoComponentChain);
-
-    const itemName = await itemFromSelection[0].getName();
-    // Remove file extension and add suffix "_extracted"
-    const baseName = itemName.replace(/\.[^/.]+$/, "");
-    const extractedName = `${baseName}_extracted`;
-    console.log('Item name: ', extractedName);
-    
-
-    // set output path according to sequence name
-    const outputPath = `${exportBasePath}${sep}${extractedName}.mov`;
-    console.log(`Output path set to: ${outputPath}`);
-
-    // call export function
-    const exportFunction = await exportWithPreset(activeSequence, outputPath, presetPath, exportArea);
-    console.log('Returned value: ', exportFunction);
-    
+    // const videoComponentChain = await videoTrackItems[0].getComponentChain();
+    // console.log('Video component chain: ', videoComponentChain);
 
 
+    // get start time of each video track item
+    for (const item of videoTrackItems) {
+        const itemName = await item.getName();
+        const startTime = await item.getStartTime();
+        const endTime = await item.getEndTime();
+        // console.log('Clip: ', itemName, ' Start time: ', startTime.seconds, ' sec, End time: ', endTime.seconds, ' sec');
+
+        // return the item which has its start time before the inpoint and its end time after the inpoint
+        if (startTime.seconds <= inPoint.seconds && endTime.seconds >= inPoint.seconds) {
+            console.log('export name to take from item: ', itemName);
+
+
+            const baseItemName = itemName.replace(/\.[^/.]+$/, "");
+            const newItemName = `${baseItemName}_extracted`;
+            console.log('New export name: ', newItemName);
+
+            // set output path according to sequence name
+            const outputPath = `${exportBasePath}${sep}${newItemName}.mov`;
+            console.log(`Output path set to: ${outputPath}`);
+
+            // create output folder if it does not exist
+            // try {
+            //     // Try to get the folder entry
+            //     const folderEntry = await localFileSystem.getEntryWithUrl(exportBasePath);
+            //     if (!folderEntry.isFolder) {
+            //         throw new Error(`${exportBasePath} exists but is not a folder.`);
+            //     }
+            //     // Folder exists
+            //     // return folderEntry;
+            // } catch (e) {
+            //     // Folder does not exist, create it
+            //     const newFolderEntry = await localFileSystem.createEntryWithUrl(exportBasePath, { type: types.folder });
+            //     console.log(`Created output directory: ${newFolderEntry.nativePath}`);
+            //     // return newFolderEntry;
+            // }
+
+            // call export function
+            const exportFunction = await exportWithPreset(activeSequence, outputPath, presetPath, exportArea);
+            console.log('Returned value: ', exportFunction);
+        }
+        else {
+            console.log('No clip found in in/out point range');
+        }
+    }
 
 }
 module.exports = { exportSequenceSelection };
