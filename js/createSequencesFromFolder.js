@@ -2,6 +2,8 @@
 const { getSelectedProjectItems } = require('../src/getSelectedProjectItems.js');
 const { findProjectFolderByName } = require('../src/findProjectFolderByName.js');
 const { findProjectItemsByName } = require('../src/findProjectItemsByName.js');
+const { executeCompoundAction } = require('../src/executeCompoundAction.js');
+
 
 // global objects
 const ppro = require("premierepro");
@@ -17,7 +19,9 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName) {
     const project = await ppro.Project.getActiveProject();
     console.log('Active project: ', project);
     
-
+    // get project root
+    const rootItem = await project.getRootItem();
+    console.log('Root FolderItems: ', rootItem);
 
     // search for the bin by name
     let folderObject;
@@ -125,15 +129,56 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName) {
             // const newSeq = await project.createSequenceWithPresetPath(seqName, presetPath);            
             console.log(`Created sequence: ${newSeq.name} with preset: ${presetPath}`);
 
-            // move newly creaged sequence to the bin
-            
+            // move newly created sequence to the bin
+            // get project item of the new sequence
+            const NewSeqProjectItem = await newSeq.getProjectItem();
+            // create action to execute
+            const actionMoveNewSeq = await rootItem.createMoveItemAction(NewSeqProjectItem, folderObject);
+            executeCompoundAction(project, actionMoveNewSeq);
+            console.log(`Moved sequence: ${NewSeqProjectItem.name} to bin: ${folderObject.name}`);
+
+            // get the sequence editor
+            const sequenceEditor = ppro.SequenceEditor.getEditor(newSeq);
+            console.log('Sequence editor acquired: ', sequenceEditor);
+
+            // Insert the clip into the sequence
+            const offset = 746; // seconds
+            // const clipProjectItemFile = ppro.ClipProjectItem.cast(projItemFile); // ensure correct type
+            // if (!clipProjectItemFile) {
+            //     console.error(`Failed to cast project item to ClipProjectItem: ${projItemFile.name}`);
+            //     continue;
+            // }
+
+
+            // start action to insert clip
+            const actionInsertClip = await sequenceEditor.createInsertProjectItemAction(projItemFile, offset, 0, 0, true);
+            executeCompoundAction(project, actionInsertClip);
+            console.log(`Inserted clip: ${projItemFile.name} at offset: ${offset} seconds`);
+
+            // const clipProjectItem = ppro.ClipProjectItem.cast(projItemFile);
+            // if (!clipProjectItem) {
+            //     console.error('Not a ClipProjectItem:', projItemFile);
+            //     continue;
+            // }
+
+            // await project.lockedAccess(async () => {
+            //     await project.executeTransaction(async (compoundAction) => {
+            //         const actInsertProjItem = await sequenceEditor.createInsertProjectItemAction(
+            //             clipProjectItem,
+            //             0, // Insert at start
+            //             0, // Video track index
+            //             0, // Audio track index
+            //             true // Overwrite
+            //         );
+            //         compoundAction.addAction(actInsertProjItem);
+            //     });
+            // });
+            // console.log(`Inserted clip: ${clipProjectItem.name} at offset: 0 seconds`);
+
+            // await newSeq.videoTracks[0].insertClip(projItemFile, offset);
+            // console.log(`${projItemFile.name} added to sequence: ${newSeq.name}`);
 
             return;
-            // Insert the clip into the sequence
-            const offset = 14; // seconds
-            await newSeq.videoTracks[0].insertClip(projItemFile, offset);
-            console.log(`${projItemFile.name} added to sequence: ${newSeq.name}`);
-
             // Add the black frame at the start if it exists
             if (projItemBlackFrame) {
                 await newSeq.videoTracks[0].insertClip(projItemBlackFrame, 0);
