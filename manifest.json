@@ -12,7 +12,7 @@
   ],
   "manifestVersion": 5,
   "requiredPermissions": {
-    "localFileSystem": "fullAccess", // https://developer.adobe.com/premiere-pro/uxp/resources/recipes/file-operation/
+    "localFileSystem": "fullAccess",
     "clipboard": "readAndWrite"
   },
   "entrypoints": [

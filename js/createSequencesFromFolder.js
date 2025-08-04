@@ -142,18 +142,18 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName) {
             console.log('Sequence editor acquired: ', sequenceEditor);
 
             // Insert the clip into the sequence
-            const offset = 746; // seconds
-            // const clipProjectItemFile = ppro.ClipProjectItem.cast(projItemFile); // ensure correct type
-            // if (!clipProjectItemFile) {
-            //     console.error(`Failed to cast project item to ClipProjectItem: ${projItemFile.name}`);
-            //     continue;
-            // }
+            const offset = await ppro.TickTime.createWithSeconds(7);
+            const clipProjectItemFile = ppro.ClipProjectItem.cast(projItemFile); // ensure correct type
+            if (!clipProjectItemFile) {
+                console.error(`Failed to cast project item to ClipProjectItem: ${projItemFile.name}`);
+                continue;
+            }
 
 
             // start action to insert clip
-            const actionInsertClip = await sequenceEditor.createInsertProjectItemAction(projItemFile, offset, 0, 0, true);
-            executeCompoundAction(project, actionInsertClip);
-            console.log(`Inserted clip: ${projItemFile.name} at offset: ${offset} seconds`);
+            // const actionInsertClip = await sequenceEditor.createInsertProjectItemAction(projItemFile, offset, 0, 0, true);
+            // executeCompoundAction(project, actionInsertClip);
+            // console.log(`Inserted clip: ${projItemFile.name} at offset: ${offset} seconds`);
 
             // const clipProjectItem = ppro.ClipProjectItem.cast(projItemFile);
             // if (!clipProjectItem) {
@@ -161,20 +161,43 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName) {
             //     continue;
             // }
 
-            // await project.lockedAccess(async () => {
-            //     await project.executeTransaction(async (compoundAction) => {
-            //         const actInsertProjItem = await sequenceEditor.createInsertProjectItemAction(
-            //             clipProjectItem,
-            //             0, // Insert at start
-            //             0, // Video track index
-            //             0, // Audio track index
-            //             true // Overwrite
-            //         );
-            //         compoundAction.addAction(actInsertProjItem);
-            //     });
-            // });
-            // console.log(`Inserted clip: ${clipProjectItem.name} at offset: 0 seconds`);
+            // Insert the clip into the sequence at the start
+            await project.lockedAccess(async () => {
+                await project.executeTransaction(async (compoundAction) => {
+                    const actInsertProjItem = await sequenceEditor.createInsertProjectItemAction(
+                        clipProjectItemFile,
+                        offset, // Insert with 
+                        0, // Video track index
+                        0, // Audio track index
+                        true // Overwrite
+                    );
+                    compoundAction.addAction(actInsertProjItem);
+                });
+            });
+            console.log(`Inserted clip: ${clipProjectItemFile.name} at offset: 0 seconds`);
 
+
+            // Insert the black frame into the sequence at the start
+            const projItemBlackFrame = ppro.ClipProjectItem.cast(blackFrameObject);
+            if (projItemBlackFrame) {
+                await project.lockedAccess(async () => {
+                    await project.executeTransaction(async (compoundAction) => {
+                        const actInsertBlackFrame = await sequenceEditor.createInsertProjectItemAction(
+                            projItemBlackFrame,
+                            0, // Insert at start
+                            0, // Video track index
+                            0, // Audio track index
+                            true // Overwrite
+                        );
+                        compoundAction.addAction(actInsertBlackFrame);
+                    });
+                });
+                console.log(`Inserted black frame: ${projItemBlackFrame.name} at offset: 0 seconds`);
+            } else {
+                console.warn('Black frame project item could not be cast.');
+            }
+            
+            
             // await newSeq.videoTracks[0].insertClip(projItemFile, offset);
             // console.log(`${projItemFile.name} added to sequence: ${newSeq.name}`);
 
