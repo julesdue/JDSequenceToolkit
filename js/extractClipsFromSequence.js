@@ -6,7 +6,7 @@ const { executeCompoundAction } = require('../src/executeCompoundAction.js');
 const ppro = require("premierepro");
 
 // Function
-async function extractClipsFromSequence(sep, clipExtractPath) {
+async function extractClipsFromSequence(sep, clipExtractPath, videoTrackName) {
     console.log('extractClipsFromSequence called');
 
     // Get the current project using UXP API

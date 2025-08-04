@@ -76,11 +76,13 @@ document.querySelector("#btnExtractClips").addEventListener("click", async () =>
   console.log("Extract Clips button clicked");
 
   // Get input values from the UI
-  const clipExtractPath = document.getElementById("input-clip-extract-path").value;
+  const clipExtractPath = document.getElementById("input-clip-extract-basepath").value;
   console.log(`Clip extract path: ${clipExtractPath}`);
+  const videoTrackName = document.getElementById("input-clip-extract-video-track").value;
+  console.log(`Video track name: ${videoTrackName}`);
 
   try {
-    await extractClipsFromSequence(sep, clipExtractPath);
+    await extractClipsFromSequence(sep, clipExtractPath, videoTrackName);
     console.log(`Done sending extracted clips to MediaEncoder`);
   } catch (error) {
     console.error(`Error extracting clips from path: ${clipExtractPath}`, error);
@@ -95,11 +97,13 @@ document.querySelector("#btnExportSequenceSelection").addEventListener("click", 
   console.log("Export Selection button clicked");
 
   // Get input values from the UI
-  const exportSelectionPath = document.getElementById("input-inout-extract-path").value;
-  console.log(`Export selection path: ${exportSelectionPath}`);
+  const exportSelectionPath = document.getElementById("input-export-selection-basepath").value;
+  console.log(`Export selection basepath: ${exportSelectionPath}`);
+  const videoTrackName = document.getElementById("input-export-selection-video-track").value;
+  console.log(`Video track name: ${videoTrackName}`);
 
   try {
-    await exportSequenceSelection(sep, exportSelectionPath);
+    await exportSequenceSelection(sep, exportSelectionPath, videoTrackName);
     console.log(`Done exporting selection`);
   } catch (error) {
     console.error(`Error exporting selection from path: ${exportSelectionPath}`, error);

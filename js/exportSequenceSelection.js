@@ -3,10 +3,10 @@ const { exportWithPreset } = require('../src/exportWithPreset.js');
 
 // global objects
 const ppro = require("premierepro");
-const { localFileSystem, types } = require('uxp').storage;
+// const { localFileSystem, types } = require('uxp').storage;
 
 
-async function exportSequenceSelection(sep, exportBasePath) {
+async function exportSequenceSelection(sep, exportBasePath, videoTrackName) {
     console.log('exportSequenceSelection called');
 
     // Get the current project using UXP API
@@ -27,10 +27,6 @@ async function exportSequenceSelection(sep, exportBasePath) {
 
     // get all video tracks
     const videoTrackCount = await activeSequence.getVideoTrackCount();
-    
-    // video track number
-    const videoTrackNumber = 0; // alter if needed // 0 = first track
-
 
     // setup vars for export function
     const presetPath = `D:${sep}JuliansDev${sep}AdobePremierePro${sep}kipromanager${sep}payloads${sep}ALPINALE_Extracts_QT_h264_medium_quality.epr`;
@@ -38,17 +34,17 @@ async function exportSequenceSelection(sep, exportBasePath) {
     const exportArea = false; // true = working area; false = in/out points
 
     
-    // current playhead position
-    // not needed
-    const currentPlayheadPosition = await activeSequence.getPlayerPosition();
-    console.log('Current playhead position: ', currentPlayheadPosition);
+    // // current playhead position
+    // // not needed
+    // const currentPlayheadPosition = await activeSequence.getPlayerPosition();
+    // console.log('Current playhead position: ', currentPlayheadPosition);
 
     // current selection
     // not needed
-    const currentSelection = await activeSequence.getSelection();
-    console.log('Current selection: ', currentSelection);
-    const itemFromSelection = await currentSelection.getItems();
-    console.log('Item from selection: ', itemFromSelection);
+    // const currentSelection = await activeSequence.getSelection();
+    // console.log('Current selection: ', currentSelection);
+    // const itemFromSelection = await currentSelection.getItems();
+    // console.log('Item from selection: ', itemFromSelection);
 
 
     // get in point of sequence
@@ -57,6 +53,18 @@ async function exportSequenceSelection(sep, exportBasePath) {
     console.log('Current InPoint: ', inPoint.seconds, ' sec, OutPoint: ', outPoint.seconds, ' sec');
 
     // get video track 
+    let videoTrackNumber = 0; // default to first track if not found
+    for (let i = 0; i < videoTrackCount; i++) {
+        const track = await activeSequence.getVideoTrack(i);
+
+        // match track name with var videoTrackName
+        const trackName = await track.name;
+        if (trackName === videoTrackName) {
+            videoTrackNumber = i;
+            console.log(`Found video track: ${trackName} at index ${videoTrackNumber}`);
+        }
+    }
+
     const videoTrack = await activeSequence.getVideoTrack(videoTrackNumber);
     console.log('Video track: ', videoTrack);
 
@@ -107,6 +115,7 @@ async function exportSequenceSelection(sep, exportBasePath) {
             // call export function
             const exportFunction = await exportWithPreset(activeSequence, outputPath, presetPath, exportArea);
             console.log('Returned value: ', exportFunction);
+            break;
         }
         else {
             console.log('No clip found in in/out point range');

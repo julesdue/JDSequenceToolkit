@@ -44,12 +44,12 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName) {
 
 
     // get children item of my folder
-    const movies = await folderObject.getItems();
-    console.log(`Found ${movies.length} items in folder: ${folderName}`);
+    const ListOfMovieFiles = await folderObject.getItems();
+    console.log(`Found ${ListOfMovieFiles.length} items in folder: ${folderName}`);
 
-    // content type has to be media
+    // chehck if all items are type of media
     const mediaItems = [];
-    for (const item of movies) {
+    for (const item of ListOfMovieFiles) {
         const clipItem = ppro.ClipProjectItem.cast(item);
         if (clipItem) {
             const contentType = await clipItem.getContentType();
@@ -64,6 +64,11 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName) {
     });
 
 
+    //
+
+
+    // return;
+
     // Loop to create sequences
     let createdCount = 0;
     for (let i = 0; i < mediaItems.length; i++) {
@@ -71,13 +76,14 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName) {
         if (projItemFile && !projItemFile.name.endsWith('_dnx')) {
             console.log(`Processing file: ${projItemFile.name}`);
 
-            // Get clip interpretation (frame rate)
-
-            // CURRENT STATUS
             
-            const interp = await projItemFile.getFootageInterpretation();
-            const fps = interp.frameRate;
+            // get footage interprator of current project item
+            const FootageInterpretor = await projItemFile.getFootageInterpretation();
+            const fps = FootageInterpretor.getFrameRate();
             console.log(`Clip: ${projItemFile.name} | FPS: ${fps}`);
+
+
+            
 
             // Match preset filenames
             let fpsPreset;
@@ -97,11 +103,12 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName) {
             }
 
             // Build preset path (use path.join in UXP)
-            const { join } = require('uxp').storage.localFileSystem;
-            const presetPath = `${payloadsPath}KiPro_FHD_8Ch_${fpsPreset}fps.sqpreset`;
+            // const { join } = require('uxp').storage.localFileSystem;
+            const presetPath = `D:${sep}JuliansDev${sep}AdobePremierePro${sep}kipromanager${sep}payloads${sep}KiPro_FHD_8Ch_${fpsPreset}fps.sqpreset`;
             console.log(`Using preset: ${presetPath}`);
 
-            // Sequence name
+
+            // cleanup sequence name
             const seqName = projItemFile.name.replace(/\.[^.]+$/, '_dnx');
             console.log(`Attempting to create sequence: ${seqName}`);
 
@@ -113,9 +120,15 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName) {
             }
 
             // Create the sequence with the specified preset
+            // should be createSequenceWithPresetPath() because createSequence() is deprecated, but createSequenceWithPresetPath() doesn't work
             const newSeq = await project.createSequence(seqName, presetPath);
+            // const newSeq = await project.createSequenceWithPresetPath(seqName, presetPath);            
             console.log(`Created sequence: ${newSeq.name} with preset: ${presetPath}`);
 
+            // move newly creaged sequence to the bin
+            
+
+            return;
             // Insert the clip into the sequence
             const offset = 14; // seconds
             await newSeq.videoTracks[0].insertClip(projItemFile, offset);
