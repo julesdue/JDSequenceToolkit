@@ -2,6 +2,6 @@
   "name": "kipromanager",
   "version": "1.0.0",
   "description": "UXP plugin for prepping and creating files for playback utelizing the hardware AJA KiPro Playback.",
-  "author": "Adobe Inc",
+  "author": "Julian Duenser",
   "license": "Apache-2.0"
 }

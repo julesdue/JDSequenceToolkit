@@ -4,3 +4,4 @@
 - don't give long summaries at the end of a task. just very biefly tell what you did in pullet points.
 - instructions on how to use the UXP apis look into: doc_classes.md
 - instructions on which classes exists and looking for hirarchies in UXP look into: how-to-use-classes.md
+- for project structuring look into: project-structure.md
