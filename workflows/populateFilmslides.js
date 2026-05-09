@@ -32,10 +32,20 @@ async function populateFilmslides(folderItem) {
 
     // Get all sequences in folder
     const items = await folderItem.getItems();
+    console.log(`📦 Total items in folder: ${items.length}`);
+
+    // Debug: log all items
+    items.forEach((item, idx) => {
+      console.log(`  [${idx}] ${item.name} (type: ${item.constructor.name})`);
+    });
+
     const sequences = items.filter(item => {
       try {
-        return ppro.SequenceItem.cast(item) !== null;
+        const sequenceItem = ppro.SequenceItem.cast(item);
+        console.log(`    Casting "${item.name}": ${sequenceItem ? 'SUCCESS (SequenceItem)' : 'FAILED'}`);
+        return sequenceItem !== null;
       } catch (e) {
+        console.log(`    Casting "${item.name}": ERROR - ${e.message}`);
         return false;
       }
     });
