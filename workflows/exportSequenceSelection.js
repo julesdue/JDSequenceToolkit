@@ -45,14 +45,6 @@ async function exportSequenceSelection(sep, exportBasePath, videoTrackName) {
     }
     console.log(`Preset path resolved to: ${presetPath}`);
 
-    // Load preset path from version-aware resource handler
-    const presetPath = await getPresetPath('ALPINALE_Extracts_QT_h264_medium_quality.epr');
-    if (!presetPath) {
-        console.error('Could not load preset path - aborting export');
-        return;
-    }
-    console.log(`Preset path resolved to: ${presetPath}`);
-
     // get video track
     let videoTrackNumber = 0; // default to first track if not found
     for (let i = 0; i < videoTrackCount; i++) {
