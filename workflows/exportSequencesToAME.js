@@ -1,6 +1,7 @@
 // import modules
-const { findProjectFolderByName } = require('../src/findProjectFolderByName.js');
-const { sendToMEwithPreset } = require('../src/sendToAMEwithPreset.js');
+const { findProjectFolderByName } = require('../lib/findProjectFolderByName.js');
+const { sendToMEwithPreset } = require('../lib/sendToAMEwithPreset.js');
+const { getPresetPath } = require('../lib/getVersionAwareResources.js');
 
 // global objects
 const ppro = require("premierepro");
@@ -33,9 +34,13 @@ async function exportSequencesToAME(sep, folderName, exportBasePath) {
     // Get all sequences in the folder
     const sequences = await folderItem.getItems(); // still not working
 
-    // setup vars for export function
-    const presetPath = `D:${sep}JuliansDev${sep}AdobePremierePro${sep}kipromanager${sep}payloads${sep}KiPro_ndxhd-hqx10bit_FHD_8ChMono_48kHz_24bit_23LUFs_ver2-5.epr`;
-    console.log(`Preset path set to: ${presetPath}`);
+    // Load preset path from version-aware resource handler
+    const presetPath = await getPresetPath('KiPro_ndxhd-hqx10bit_FHD_8ChMono_48kHz_24bit_23LUFs_ver2-5.epr');
+    if (!presetPath) {
+        console.error('Could not load preset path - aborting export');
+        return;
+    }
+    console.log(`Preset path resolved to: ${presetPath}`);
     const exportArea = true; // true = working area; false = in/out points
 
     // start loop for exporting each clip in the sequence

@@ -1,5 +1,6 @@
 // import modules
-const { exportWithPreset } = require('../src/exportWithPreset.js');
+const { exportWithPreset } = require('../lib/exportWithPreset.js');
+const { getPresetPath } = require('../lib/getVersionAwareResources.js');
 
 // global objects
 const ppro = require("premierepro");
@@ -29,30 +30,30 @@ async function exportSequenceSelection(sep, exportBasePath, videoTrackName) {
     const videoTrackCount = await activeSequence.getVideoTrackCount();
 
     // setup vars for export function
-    const presetPath = `D:${sep}JuliansDev${sep}AdobePremierePro${sep}kipromanager${sep}payloads${sep}ALPINALE_Extracts_QT_h264_medium_quality.epr`;
-    console.log(`Preset path set to: ${presetPath}`);
     const exportArea = false; // true = working area; false = in/out points
-
-    
-    // // current playhead position
-    // // not needed
-    // const currentPlayheadPosition = await activeSequence.getPlayerPosition();
-    // console.log('Current playhead position: ', currentPlayheadPosition);
-
-    // current selection
-    // not needed
-    // const currentSelection = await activeSequence.getSelection();
-    // console.log('Current selection: ', currentSelection);
-    // const itemFromSelection = await currentSelection.getItems();
-    // console.log('Item from selection: ', itemFromSelection);
-
 
     // get in point of sequence
     const inPoint = await activeSequence.getInPoint();
     const outPoint = await activeSequence.getOutPoint();
     console.log('Current InPoint: ', inPoint.seconds, ' sec, OutPoint: ', outPoint.seconds, ' sec');
 
-    // get video track 
+    // Load preset path from version-aware resource handler
+    const presetPath = await getPresetPath('ALPINALE_Extracts_QT_h264_medium_quality.epr');
+    if (!presetPath) {
+        console.error('Could not load preset path - aborting export');
+        return;
+    }
+    console.log(`Preset path resolved to: ${presetPath}`);
+
+    // Load preset path from version-aware resource handler
+    const presetPath = await getPresetPath('ALPINALE_Extracts_QT_h264_medium_quality.epr');
+    if (!presetPath) {
+        console.error('Could not load preset path - aborting export');
+        return;
+    }
+    console.log(`Preset path resolved to: ${presetPath}`);
+
+    // get video track
     let videoTrackNumber = 0; // default to first track if not found
     for (let i = 0; i < videoTrackCount; i++) {
         const track = await activeSequence.getVideoTrack(i);
@@ -71,17 +72,11 @@ async function exportSequenceSelection(sep, exportBasePath, videoTrackName) {
     const videoTrackItems = await videoTrack.getTrackItems(1, false);
     console.log('Video track items: ', videoTrackItems);
 
-    // get video component chain
-    // const videoComponentChain = await videoTrackItems[0].getComponentChain();
-    // console.log('Video component chain: ', videoComponentChain);
-
-
     // get start time of each video track item
     for (const item of videoTrackItems) {
         const itemName = await item.getName();
         const startTime = await item.getStartTime();
         const endTime = await item.getEndTime();
-        // console.log('Clip: ', itemName, ' Start time: ', startTime.seconds, ' sec, End time: ', endTime.seconds, ' sec');
 
         // return the item which has its start time before the inpoint and its end time after the inpoint
         if (startTime.seconds <= inPoint.seconds && endTime.seconds >= inPoint.seconds) {
@@ -95,22 +90,6 @@ async function exportSequenceSelection(sep, exportBasePath, videoTrackName) {
             // set output path according to sequence name
             const outputPath = `${exportBasePath}${sep}${newItemName}.mov`;
             console.log(`Output path set to: ${outputPath}`);
-
-            // create output folder if it does not exist
-            // try {
-            //     // Try to get the folder entry
-            //     const folderEntry = await localFileSystem.getEntryWithUrl(exportBasePath);
-            //     if (!folderEntry.isFolder) {
-            //         throw new Error(`${exportBasePath} exists but is not a folder.`);
-            //     }
-            //     // Folder exists
-            //     // return folderEntry;
-            // } catch (e) {
-            //     // Folder does not exist, create it
-            //     const newFolderEntry = await localFileSystem.createEntryWithUrl(exportBasePath, { type: types.folder });
-            //     console.log(`Created output directory: ${newFolderEntry.nativePath}`);
-            //     // return newFolderEntry;
-            // }
 
             // call export function
             const exportFunction = await exportWithPreset(activeSequence, outputPath, presetPath, exportArea);

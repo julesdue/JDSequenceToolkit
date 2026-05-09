@@ -1,9 +1,9 @@
 // import modules
-const { getSelectedProjectItems } = require('../src/getSelectedProjectItems.js');
-const { findProjectFolderByName } = require('../src/findProjectFolderByName.js');
-const { findProjectItemsByName } = require('../src/findProjectItemsByName.js');
-const { executeCompoundAction } = require('../src/executeCompoundAction.js');
-
+const { getSelectedProjectItems } = require('../lib/getSelectedProjectItems.js');
+const { findProjectFolderByName } = require('../lib/findProjectFolderByName.js');
+const { findProjectItemsByName } = require('../lib/findProjectItemsByName.js');
+const { executeCompoundAction } = require('../lib/executeCompoundAction.js');
+const { getPresetPath } = require('../lib/getVersionAwareResources.js');
 
 // global objects
 const ppro = require("premierepro");
@@ -106,9 +106,13 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName) {
                 fpsPreset = fpsNum.toString().replace(/[,\.]/g, '');
             }
 
-            // Build preset path (use path.join in UXP)
-            // const { join } = require('uxp').storage.localFileSystem;
-            const presetPath = `D:${sep}JuliansDev${sep}AdobePremierePro${sep}kipromanager${sep}payloads${sep}KiPro_FHD_8Ch_${fpsPreset}fps.sqpreset`;
+            // Load preset path from version-aware resource handler
+            const presetFileName = `KiPro_FHD_8Ch_${fpsPreset}fps.sqpreset`;
+            const presetPath = await getPresetPath(presetFileName);
+            if (!presetPath) {
+                console.error(`Could not load preset for ${fpsPreset}fps - skipping file`);
+                continue;
+            }
             console.log(`Using preset: ${presetPath}`);
 
 

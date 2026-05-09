@@ -1,6 +1,6 @@
 // import modules
-const { sendToMEwithPreset } = require('../src/sendToAMEwithPreset.js');
-const { executeCompoundAction } = require('../src/executeCompoundAction.js');
+const { sendToMEwithPreset } = require('../lib/sendToAMEwithPreset.js');
+const { executeCompoundAction } = require('../lib/executeCompoundAction.js');
 
 // global objects
 const ppro = require("premierepro");
@@ -31,7 +31,7 @@ async function extractClipsFromSequence(sep, clipExtractPath, videoTrackName) {
 
 
     // setup vars for export function
-    const presetPath = `D:${sep}JuliansDev${sep}AdobePremierePro${sep}kipromanager${sep}payloads${sep}ALPINALE_Extracts_QT_h264_medium_quality.epr`;
+    const presetPath = `D:${sep}JuliansDev${sep}AdobePremierePro${sep}kipromanager${sep}payloads${sep}v26${sep}ALPINALE_Extracts_QT_h264_medium_quality.epr`;
     console.log(`Preset path set to: ${presetPath}`);
     const outputPath = `${clipExtractPath}${sep}${activeSequence.name}.mov`;
     console.log(`Output path set to: ${outputPath}`);

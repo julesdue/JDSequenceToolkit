@@ -9,10 +9,10 @@ console.log(ppro);
 
 
 // UXP scripts and API as CommonJS modules
-const { createSequencesFromFolder } = require("./js/createSequencesFromFolder.js");
-const { exportSequencesToAME } = require("./js/exportSequencesToAME.js");
-const { extractClipsFromSequence } = require("./js/extractClipsFromSequence.js");
-const { exportSequenceSelection } = require("./js/exportSequenceSelection.js");
+const { createSequencesFromFolder } = require("./workflows/createSequencesFromFolder.js");
+const { exportSequencesToAME } = require("./workflows/exportSequencesToAME.js");
+const { extractClipsFromSequence } = require("./workflows/extractClipsFromSequence.js");
+const { exportSequenceSelection } = require("./workflows/exportSequenceSelection.js");
 
 // UXP requires a different way to handle paths and OS-specific separators
 let sep = '/';
