@@ -5,10 +5,9 @@ const { fuzzyMatch } = require('../lib/fuzzyMatch.js');
 const { getMogrtParams } = require('../lib/getMogrtParams.js');
 const { findMogrtInSequence } = require('../lib/findMogrtInSequence.js');
 const { changeMogrtParam } = require('../lib/changeMogrtParam.js');
-const { findProjectFolderByName } = require('../lib/findProjectFolderByName.js');
 const { executeCompoundAction } = require('../lib/executeCompoundAction.js');
 
-async function populateFilmslides(folderName) {
+async function populateFilmslides(folderItem) {
   try {
     console.log('🎬 populateFilmslides workflow started');
 
@@ -23,24 +22,16 @@ async function populateFilmslides(folderName) {
       throw new Error('No mapping selected. Please configure the parameter mapping.');
     }
 
-    if (!folderName || folderName.trim() === '') {
-      throw new Error('No folder selected. Please select a project folder.');
+    if (!folderItem) {
+      throw new Error('No folder provided');
     }
 
-    console.log(`📁 Processing folder: ${folderName}`);
+    console.log(`📁 Processing folder: ${folderItem.name}`);
     console.log(`📊 CSV data: ${csvData.data.length} rows`);
     console.log('🗺️  Mapping:', mappingSelection);
 
-    // Get project and folder
-    const project = await ppro.Project.getActiveProject();
-    const folderObject = await findProjectFolderByName(folderName);
-
-    if (!folderObject) {
-      throw new Error(`Folder "${folderName}" not found in project`);
-    }
-
     // Get all sequences in folder
-    const children = folderObject.getChildren();
+    const children = folderItem.getChildren();
     const sequences = children.filter(item => {
       try {
         return ppro.SequenceItem.cast(item) !== null;
@@ -52,11 +43,13 @@ async function populateFilmslides(folderName) {
     console.log(`📹 Found ${sequences.length} sequences in folder`);
 
     if (sequences.length === 0) {
-      throw new Error(`No sequences found in folder "${folderName}"`);
+      throw new Error(`No sequences found in folder "${folderItem.name}"`);
     }
 
     let successCount = 0;
     let skipCount = 0;
+
+    const project = await ppro.Project.getActiveProject();
 
     // Process each sequence
     for (const sequenceItem of sequences) {

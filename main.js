@@ -171,25 +171,58 @@ document.querySelector("#btnDownloadSampleCSV").addEventListener("click", async 
 document.querySelector("#btnInsertFilmslideData").addEventListener("click", async () => {
   console.log("Insert Filmslide Data button clicked");
   const statusEl = document.getElementById("csvStatusText");
+  const folderStatusEl = document.getElementById("folderStatusText");
 
   try {
-    const folderName = document.getElementById("input-filmslide-folder").value;
-    console.log(`Folder name: ${folderName}`);
+    // Get selected folder from project panel
+    const ppro = require("premierepro");
+    const project = await ppro.Project.getActiveProject();
+    const selection = await project.getSelection();
 
-    if (!folderName || folderName.trim() === "") {
-      alert("Please enter a project folder name");
+    if (!selection || selection.length === 0) {
+      alert("Please select a folder in the project panel");
+      folderStatusEl.textContent = "❌ No folder selected";
       return;
     }
 
+    // Get the first selected item and check if it's a folder
+    const selectedItem = selection[0];
+    let folderItem = null;
+
+    try {
+      folderItem = ppro.FolderItem.cast(selectedItem);
+    } catch (e) {
+      // Not a folder, try to get its parent
+      try {
+        folderItem = selectedItem.getParentItem();
+        if (folderItem) {
+          const casted = ppro.FolderItem.cast(folderItem);
+          if (!casted) folderItem = null;
+        }
+      } catch (err) {
+        // Could not get parent or it's not a folder
+      }
+    }
+
+    if (!folderItem) {
+      alert("Selected item is not a folder. Please select a folder in the project panel.");
+      folderStatusEl.textContent = "❌ Selected item is not a folder";
+      return;
+    }
+
+    const folderName = folderItem.name;
+    folderStatusEl.textContent = `📁 Using folder: "${folderName}"`;
     statusEl.textContent = "Inserting filmslide data...";
 
-    const result = await populateFilmslides(folderName);
+    const result = await populateFilmslides(folderItem);
 
     if (result.success) {
       statusEl.textContent = `✅ ${result.message}`;
+      folderStatusEl.textContent = `📁 "${folderName}" - Complete`;
       alert(`Success! ${result.message}`);
     } else {
       statusEl.textContent = `❌ ${result.error}`;
+      folderStatusEl.textContent = `📁 "${folderName}" - Error`;
       alert(`Error: ${result.error}`);
     }
 
