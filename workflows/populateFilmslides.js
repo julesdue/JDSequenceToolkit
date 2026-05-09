@@ -34,21 +34,21 @@ async function populateFilmslides(folderItem) {
     const items = await folderItem.getItems();
     console.log(`📦 Total items in folder: ${items.length}`);
 
-    // Debug: log all items
-    items.forEach((item, idx) => {
-      console.log(`  [${idx}] ${item.name} (type: ${item.constructor.name})`);
-    });
-
-    const sequences = items.filter(item => {
+    // Debug: log all items and try to get sequences from them
+    const sequences = [];
+    for (const item of items) {
+      console.log(`  Checking item: ${item.name}`);
       try {
-        const sequenceItem = ppro.SequenceItem.cast(item);
-        console.log(`    Casting "${item.name}": ${sequenceItem ? 'SUCCESS (SequenceItem)' : 'FAILED'}`);
-        return sequenceItem !== null;
+        // Try to get sequence from this item
+        const sequence = await item.getSequence();
+        if (sequence) {
+          console.log(`    ✅ Got sequence: ${item.name}`);
+          sequences.push(item);
+        }
       } catch (e) {
-        console.log(`    Casting "${item.name}": ERROR - ${e.message}`);
-        return false;
+        console.log(`    ⚠️  Not a sequence or error: ${e.message}`);
       }
-    });
+    }
 
     console.log(`📹 Found ${sequences.length} sequences in folder`);
 
