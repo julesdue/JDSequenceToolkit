@@ -175,9 +175,9 @@ document.querySelector("#btnInsertFilmslideData").addEventListener("click", asyn
 
   try {
     // Get selected folder from project panel
-    const ppro = require("premierepro");
     const project = await ppro.Project.getActiveProject();
-    const selection = await project.getSelection();
+    const projectSelection = await ppro.ProjectUtils.getSelection(project);
+    const selection = await projectSelection.getItems();
 
     if (!selection || selection.length === 0) {
       alert("Please select a folder in the project panel");
