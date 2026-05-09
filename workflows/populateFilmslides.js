@@ -31,8 +31,8 @@ async function populateFilmslides(folderItem) {
     console.log('🗺️  Mapping:', mappingSelection);
 
     // Get all sequences in folder
-    const children = folderItem.getChildren();
-    const sequences = children.filter(item => {
+    const items = await folderItem.getItems();
+    const sequences = items.filter(item => {
       try {
         return ppro.SequenceItem.cast(item) !== null;
       } catch (e) {
