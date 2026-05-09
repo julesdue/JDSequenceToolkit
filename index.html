@@ -51,13 +51,29 @@
       </a>
       <h3>Export Sequence Selection with In/Out-Points</h3>
       <h6>Video Track Name</h6>
-      <input type="text" id="input-export-selection-video-track" placeholder="Enter video track name" value="Video 1" /> 
+      <input type="text" id="input-export-selection-video-track" placeholder="Enter video track name" value="Video 1" />
       <h6>Base path to extract clips</h6>
       <input type="text" id="input-export-selection-basepath" placeholder="Enter in/out extract path" value="C:\Users\julia\Desktop\temp" />
- 
+
       <sp-description>Extract the selected In/Out range from the active sequence. Uses medium h264 preset. Uses the clip name as export name.</sp-description>
       <br/>
       <sp-button id="btnExportSequenceSelection">Export Selection</sp-button>
+    </sp-body>
+
+    <sp-body id="plugin-body" style="position:relative;">
+      <a href="https://github.com/julesdue/kipromanager" target="_blank" class="info-icon-link" title="More info">
+        <span class="info-icon">i</span>
+      </a>
+      <h3>Filmslide Data Insert</h3>
+      <sp-description>Load a CSV file with film metadata and automatically populate MOGRT parameters in sequences.</sp-description>
+      <br/>
+      <sp-button id="btnLoadCSV">Load CSV</sp-button>
+      <sp-button id="btnDownloadSampleCSV">Download sample CSV file</sp-button>
+      <sp-description id="csvStatusText"></sp-description>
+      <br/>
+      <h6>Project Folder Name</h6>
+      <input type="text" id="input-filmslide-folder" placeholder="Enter folder name" value="Filmslides" />
+      <sp-button id="btnInsertFilmslideData">Insert Filmslide Data</sp-button>
     </sp-body>
     
     <br/>

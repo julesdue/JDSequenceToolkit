@@ -13,6 +13,11 @@ const { createSequencesFromFolder } = require("./workflows/createSequencesFromFo
 const { exportSequencesToAME } = require("./workflows/exportSequencesToAME.js");
 const { extractClipsFromSequence } = require("./workflows/extractClipsFromSequence.js");
 const { exportSequenceSelection } = require("./workflows/exportSequenceSelection.js");
+const { populateFilmslides } = require("./workflows/populateFilmslides.js");
+const { openUXPFileDialog } = require("./lib/openUXPFileDialog.js");
+const { parseCSV } = require("./lib/parseCSV.js");
+const { createMappingPopup } = require("./lib/createMappingPopup.js");
+const { memoryStorage } = require("./lib/memoryStorage.js");
 
 // UXP requires a different way to handle paths and OS-specific separators
 let sep = '/';
@@ -108,5 +113,90 @@ document.querySelector("#btnExportSequenceSelection").addEventListener("click", 
   } catch (error) {
     console.error(`Error exporting selection from path: ${exportSelectionPath}`, error);
     alert(`Failed to export selection: ${error.message || error}`);
+  }
+});
+
+
+// ===== Filmslide Data Insert Workflow =====
+
+// Listener for load CSV button
+document.querySelector("#btnLoadCSV").addEventListener("click", async () => {
+  console.log("Load CSV button clicked");
+  const statusEl = document.getElementById("csvStatusText");
+
+  try {
+    statusEl.textContent = "Loading CSV file...";
+
+    // Open file dialog and read CSV
+    const csvContent = await openUXPFileDialog();
+    if (!csvContent) {
+      statusEl.textContent = "File selection cancelled";
+      return;
+    }
+
+    // Parse CSV
+    const { headers, data } = parseCSV(csvContent);
+    memoryStorage.setCsvData({ headers, data });
+
+    // Show mapping popup
+    statusEl.textContent = `CSV loaded: ${data.length} rows, ${headers.length} columns. Setting up mapping...`;
+    console.log("Showing mapping popup");
+
+    try {
+      const mapping = await createMappingPopup(headers);
+      memoryStorage.setMappingSelection(mapping);
+      statusEl.textContent = `✅ CSV loaded with ${data.length} rows and mapping configured`;
+      console.log("Mapping confirmed, ready for data insertion");
+    } catch (err) {
+      statusEl.textContent = "Mapping cancelled";
+      console.log("Mapping cancelled:", err.message);
+    }
+  } catch (error) {
+    console.error("Error loading CSV:", error);
+    statusEl.textContent = `❌ Error loading CSV: ${error.message || error}`;
+    alert(`Failed to load CSV: ${error.message || error}`);
+  }
+});
+
+
+// Listener for download sample CSV button
+document.querySelector("#btnDownloadSampleCSV").addEventListener("click", async () => {
+  console.log("Download Sample CSV button clicked");
+  alert("Sample CSV download not yet implemented");
+  // TODO: Implement sample CSV download
+});
+
+
+// Listener for insert filmslide data button
+document.querySelector("#btnInsertFilmslideData").addEventListener("click", async () => {
+  console.log("Insert Filmslide Data button clicked");
+  const statusEl = document.getElementById("csvStatusText");
+
+  try {
+    const folderName = document.getElementById("input-filmslide-folder").value;
+    console.log(`Folder name: ${folderName}`);
+
+    if (!folderName || folderName.trim() === "") {
+      alert("Please enter a project folder name");
+      return;
+    }
+
+    statusEl.textContent = "Inserting filmslide data...";
+
+    const result = await populateFilmslides(folderName);
+
+    if (result.success) {
+      statusEl.textContent = `✅ ${result.message}`;
+      alert(`Success! ${result.message}`);
+    } else {
+      statusEl.textContent = `❌ ${result.error}`;
+      alert(`Error: ${result.error}`);
+    }
+
+    console.log("Filmslide data insertion complete");
+  } catch (error) {
+    console.error("Error inserting filmslide data:", error);
+    statusEl.textContent = `❌ Error: ${error.message || error}`;
+    alert(`Failed to insert filmslide data: ${error.message || error}`);
   }
 });
