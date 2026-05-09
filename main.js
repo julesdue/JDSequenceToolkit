@@ -154,7 +154,6 @@ document.querySelector("#btnLoadCSV").addEventListener("click", async () => {
   } catch (error) {
     console.error("Error loading CSV:", error);
     statusEl.textContent = `❌ Error loading CSV: ${error.message || error}`;
-    alert(`Failed to load CSV: ${error.message || error}`);
   }
 });
 
@@ -162,7 +161,7 @@ document.querySelector("#btnLoadCSV").addEventListener("click", async () => {
 // Listener for download sample CSV button
 document.querySelector("#btnDownloadSampleCSV").addEventListener("click", async () => {
   console.log("Download Sample CSV button clicked");
-  alert("Sample CSV download not yet implemented");
+  document.getElementById("csvStatusText").textContent = "Sample CSV download not yet implemented";
   // TODO: Implement sample CSV download
 });
 
@@ -180,7 +179,6 @@ document.querySelector("#btnInsertFilmslideData").addEventListener("click", asyn
     const selection = await projectSelection.getItems();
 
     if (!selection || selection.length === 0) {
-      alert("Please select a folder in the project panel");
       folderStatusEl.textContent = "❌ No folder selected";
       return;
     }
@@ -205,7 +203,6 @@ document.querySelector("#btnInsertFilmslideData").addEventListener("click", asyn
     }
 
     if (!folderItem) {
-      alert("Selected item is not a folder. Please select a folder in the project panel.");
       folderStatusEl.textContent = "❌ Selected item is not a folder";
       return;
     }
@@ -219,17 +216,14 @@ document.querySelector("#btnInsertFilmslideData").addEventListener("click", asyn
     if (result.success) {
       statusEl.textContent = `✅ ${result.message}`;
       folderStatusEl.textContent = `📁 "${folderName}" - Complete`;
-      alert(`Success! ${result.message}`);
     } else {
       statusEl.textContent = `❌ ${result.error}`;
       folderStatusEl.textContent = `📁 "${folderName}" - Error`;
-      alert(`Error: ${result.error}`);
     }
 
     console.log("Filmslide data insertion complete");
   } catch (error) {
     console.error("Error inserting filmslide data:", error);
     statusEl.textContent = `❌ Error: ${error.message || error}`;
-    alert(`Failed to insert filmslide data: ${error.message || error}`);
   }
 });
