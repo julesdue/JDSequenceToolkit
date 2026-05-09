@@ -34,21 +34,18 @@ async function populateFilmslides(folderItem) {
     const items = await folderItem.getItems();
     console.log(`📦 Total items in folder: ${items.length}`);
 
-    // Debug: log all items and try to get sequences from them
-    const sequences = [];
-    for (const item of items) {
-      console.log(`  Checking item: ${item.name}`);
-      try {
-        // Try to get sequence from this item
-        const sequence = await item.getSequence();
-        if (sequence) {
-          console.log(`    ✅ Got sequence: ${item.name}`);
-          sequences.push(item);
-        }
-      } catch (e) {
-        console.log(`    ⚠️  Not a sequence or error: ${e.message}`);
-      }
-    }
+    // Since user confirmed these ARE sequences, just use them directly
+    const sequences = items;
+
+    // Debug: log items
+    items.forEach((item, idx) => {
+      console.log(`  [${idx}] ${item.name}`);
+      // Log available methods
+      const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(item))
+        .filter(m => typeof item[m] === 'function')
+        .slice(0, 5);
+      console.log(`       Methods: ${methods.join(', ')}`);
+    });
 
     console.log(`📹 Found ${sequences.length} sequences in folder`);
 
@@ -88,8 +85,40 @@ async function populateFilmslides(folderItem) {
 
         console.log(`✅ Matched to film: "${matchedFilmTitle}"`);
 
-        // Load sequence
-        const sequence = await sequenceItem.getSequence();
+        // Open the sequence - get the actual Sequence object
+        let sequence;
+        try {
+          // Method 1: Try project.openSequence
+          if (typeof project.openSequence === 'function') {
+            sequence = await project.openSequence(sequenceItem);
+            console.log(`  openSequence returned: ${sequence ? 'Sequence object' : 'null'}`);
+          }
+        } catch (e) {
+          console.log(`  openSequence error: ${e.message}`);
+        }
+
+        // Method 2: Try to get sequence from item
+        if (!sequence && typeof sequenceItem.getSequence === 'function') {
+          try {
+            sequence = await sequenceItem.getSequence();
+            console.log(`  getSequence returned: ${sequence ? 'Sequence object' : 'null'}`);
+          } catch (e) {
+            console.log(`  getSequence error: ${e.message}`);
+          }
+        }
+
+        // Method 3: Try to access the sequence via getProject
+        if (!sequence && typeof sequenceItem.getProject === 'function') {
+          try {
+            const seqProject = await sequenceItem.getProject();
+            const allSequences = await seqProject.getSequences();
+            sequence = allSequences.find(seq => seq.name === sequenceName);
+            console.log(`  Found via getProject: ${sequence ? 'Sequence object' : 'not found'}`);
+          } catch (e) {
+            console.log(`  getProject error: ${e.message}`);
+          }
+        }
+
         if (!sequence) {
           console.log(`⚠️  Could not load sequence "${sequenceName}"`);
           skipCount++;
