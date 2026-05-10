@@ -1,7 +1,0 @@
-- for every task create a todo list first.
-- after each task always quickly check the entire file you just edited for any syntax errors or mistakes.
-- run the script and look at the terminal if you see any errors or warnings before ending the task.
-- don't give long summaries at the end of a task. just very biefly tell what you did in pullet points.
-- instructions on how to use the UXP apis look into: doc_classes.md
-- instructions on which classes exists and looking for hirarchies in UXP look into: how-to-use-classes.md
-- for project structuring look into: project-structure.md
