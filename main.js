@@ -208,6 +208,44 @@ console.log(`OS platform: ${os.platform()}, separator: '${sep}'`);
 
 
 
+// === Video Track Dropdown ===
+async function populateVideoTrackDropdown(/** @type {string} */ selectId) {
+  const select = /** @type {HTMLSelectElement} */ (document.getElementById(selectId));
+  if (!select) return;
+
+  try {
+    const project = await ppro.Project.getActiveProject();
+    if (!project) { select.innerHTML = '<option value="">No active project</option>'; return; }
+
+    const sequence = await project.getActiveSequence();
+    if (!sequence) { select.innerHTML = '<option value="">No active sequence</option>'; return; }
+
+    const count = await sequence.getVideoTrackCount();
+    select.innerHTML = '';
+
+    for (let i = 0; i < count; i++) {
+      const track = await sequence.getVideoTrack(i);
+      // Track name is not always available via API — fall back to "Video N" label
+      const name = (track && track.name) ? track.name : `Video ${i + 1}`;
+      const option = document.createElement('option');
+      option.value = String(i);
+      option.textContent = name;
+      select.appendChild(option);
+    }
+
+    if (count === 0) {
+      select.innerHTML = '<option value="">No video tracks found</option>';
+    } else {
+      // Auto-select the first track
+      select.value = '0';
+      console.log(`Populated video track dropdown "${selectId}" with ${count} track(s) — first track selected`);
+    }
+  } catch (e) {
+    select.innerHTML = '<option value="">Error loading tracks</option>';
+    console.error('populateVideoTrackDropdown error:', e);
+  }
+}
+
 // === Button Listeners ===
 function setupButtonListeners() {
 
@@ -287,6 +325,31 @@ document.querySelector("#btnBrowseExportPath").addEventListener("click", async (
     /** @type {HTMLInputElement} */ (document.getElementById("input-export-base-path")).value = folder.nativePath;
     console.log(`Export path set to: ${folder.nativePath}`);
   }
+});
+
+// Populate video track dropdown when the clip extractor tab becomes active
+document.querySelectorAll(".tab-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    if (btn.getAttribute("data-tab") === "tab-clip-extractor") {
+      populateVideoTrackDropdown("select-clip-extract-video-track");
+    }
+  });
+});
+
+// Checkbox to toggle between entire stack and single track
+const exportEntireStackCheckbox = /** @type {HTMLInputElement} */ (document.getElementById("exportEntireStack"));
+const trackSelect = /** @type {HTMLSelectElement} */ (document.getElementById("select-clip-extract-video-track"));
+if (exportEntireStackCheckbox && trackSelect) {
+  trackSelect.disabled = exportEntireStackCheckbox.checked;
+  exportEntireStackCheckbox.addEventListener("change", () => {
+    trackSelect.disabled = exportEntireStackCheckbox.checked;
+    console.log(`Export entire stack: ${exportEntireStackCheckbox.checked ? "enabled" : "disabled"}`);
+  });
+}
+
+// Refresh button for video track dropdown
+document.querySelector("#btnRefreshClipExtractTracks")?.addEventListener("click", () => {
+  populateVideoTrackDropdown("select-clip-extract-video-track");
 });
 
 // Listener for browse clip extract path button
@@ -373,15 +436,18 @@ document.querySelector("#btnExtractClips").addEventListener("click", async () =>
   const statusEl = document.getElementById("extractClipsStatusText");
 
   // Get input values from the UI
-  const clipExtractPath = document.getElementById("input-clip-extract-basepath").value;
+  const clipExtractPath = /** @type {HTMLInputElement} */ (document.getElementById("input-clip-extract-basepath")).value;
   console.log(`Clip extract path: ${clipExtractPath}`);
-  const videoTrackName = document.getElementById("input-clip-extract-video-track").value;
-  console.log(`Video track name: ${videoTrackName}`);
+  const exportEntireStackCheckbox = /** @type {HTMLInputElement} */ (document.getElementById("exportEntireStack"));
+  const exportEntireStack = exportEntireStackCheckbox?.checked || false;
+  const trackSelect = /** @type {HTMLSelectElement} */ (document.getElementById("select-clip-extract-video-track"));
+  const videoTrackIndex = trackSelect ? parseInt(trackSelect.value, 10) || 0 : 0;
+  console.log(`Export entire stack: ${exportEntireStack}, Video track index: ${videoTrackIndex}`);
 
   if (statusEl) statusEl.textContent = "Extracting clips...";
 
   try {
-    await exportBulkExtractedClips(sep, clipExtractPath, videoTrackName);
+    await exportBulkExtractedClips(sep, clipExtractPath, videoTrackIndex, exportEntireStack);
     console.log(`Done sending extracted clips to MediaEncoder`);
     if (statusEl) statusEl.textContent = `✅ Done — clips sent to Media Encoder`;
   } catch (error) {
@@ -477,11 +543,13 @@ document.querySelector("#btnInsertFilmslideData").addEventListener("click", asyn
 
   try {
     // Get selected folder from project panel
+    console.log("Resolving selected folder from project panel...");
     const project = await ppro.Project.getActiveProject();
     const projectSelection = await ppro.ProjectUtils.getSelection(project);
     const selection = await projectSelection.getItems();
 
     if (!selection || selection.length === 0) {
+      console.log("No folder selected in project panel");
       folderStatusEl.textContent = "❌ No folder selected";
       return;
     }
@@ -506,35 +574,47 @@ document.querySelector("#btnInsertFilmslideData").addEventListener("click", asyn
     }
 
     if (!folderItem) {
+      console.log("Selected item is not a folder");
       folderStatusEl.textContent = "❌ Selected item is not a folder";
       return;
     }
 
     const folderName = folderItem.name;
+    console.log(`Selected folder: "${folderName}"`);
     folderStatusEl.textContent = `📁 Using folder: "${folderName}"`;
     statusEl.textContent = "Inserting filmslide data...";
 
+    console.log("Starting populateFilmslides workflow...");
     const result = await populateFilmslides(folderItem);
 
     if (result.success) {
+      console.log(`✅ Filmslide data insertion successful: ${result.message}`);
       statusEl.textContent = `✅ ${result.message}`;
       folderStatusEl.textContent = `📁 "${folderName}" - Complete`;
     } else {
+      console.log(`❌ Filmslide data insertion failed: ${result.error}`);
       statusEl.textContent = `❌ ${result.error}`;
       folderStatusEl.textContent = `📁 "${folderName}" - Error`;
     }
 
-    console.log("Filmslide data insertion complete");
+    console.log("Filmslide data insertion workflow complete");
   } catch (error) {
     console.error("Error inserting filmslide data:", error);
     statusEl.textContent = `❌ Error: ${error.message || error}`;
+    console.log(`Error details: ${error instanceof Error ? error.stack : String(error)}`);
   }
 });
 
 } // end setupButtonListeners
 
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", setupButtonListeners);
+  document.addEventListener("DOMContentLoaded", () => {
+    setupButtonListeners();
+    // Auto-populate video track dropdown on plugin load
+    populateVideoTrackDropdown("select-clip-extract-video-track");
+  });
 } else {
   setupButtonListeners();
+  // Auto-populate video track dropdown on plugin load
+  populateVideoTrackDropdown("select-clip-extract-video-track");
 }

@@ -5,124 +5,187 @@ const { executeCompoundAction } = require('../lib/executeCompoundAction.js');
 // global objects
 const ppro = require("premierepro");
 
-// Function
-async function exportBulkExtractedClips(sep, clipExtractPath, videoTrackName) {
-    console.log('exportBulkExtractedClips called');
+/**
+ * Export each clip on the selected video track(s) as separate AME render jobs.
+ * For each clip: set sequence in/out points to clip's timeline start/end, queue to AME.
+ *
+ * @param {string} sep - OS path separator
+ * @param {string} clipExtractPath - Output folder path
+ * @param {number} videoTrackIndex - 0-based index of the video track to export from
+ * @param {boolean} exportEntireStack - If true, export all video tracks; if false, only the selected track
+ */
+async function exportBulkExtractedClips(sep, clipExtractPath, videoTrackIndex, exportEntireStack) {
+    console.log(`[1/5] exportBulkExtractedClips called — track index: ${videoTrackIndex}, output: ${clipExtractPath}`);
 
-    // Get the current project using UXP API
+    // Get the current project
     const project = await ppro.Project.getActiveProject();
     if (!project) {
-        console.error('No active project found.');
-        return;
+        console.error('[1/5] No active project found.');
+        return { exported: 0, failed: 0, error: 'No active project' };
     }
-    console.log('Project object acquired: ', project);
-
-    // Get root of project
-    const rootItem = await project.getRootItem();
-    console.log('Root FolderItems: ', rootItem);
-
-    // get ProjectItems of root
-    const topProjectItems = await rootItem.getItems();
-    console.log('Top level ProjectItems: ', topProjectItems);
 
     // Get the active sequence
     const activeSequence = await project.getActiveSequence();
-    console.log('Active sequence: ', activeSequence);
+    if (!activeSequence) {
+        console.error('[1/5] No active sequence found.');
+        return { exported: 0, failed: 0, error: 'No active sequence' };
+    }
+    console.log(`[1/5] Project and sequence acquired: "${activeSequence.name}"`);
 
-
-    // setup vars for export function
-    const presetPath = `D:${sep}JuliansDev${sep}AdobePremierePro${sep}kipromanager${sep}payloads${sep}v26${sep}ALPINALE_Extracts_QT_h264_medium_quality.epr`;
-    console.log(`Preset path set to: ${presetPath}`);
-    const outputPath = `${clipExtractPath}${sep}${activeSequence.name}.mov`;
-    console.log(`Output path set to: ${outputPath}`);
-    const exportArea = false; // true = working area; false = in/out points
-
-    // get all video tracks
+    // Validate track index
     const videoTrackCount = await activeSequence.getVideoTrackCount();
+    console.log(`[2/5] Video track count: ${videoTrackCount}`);
+    if (videoTrackCount === 0 || videoTrackIndex >= videoTrackCount) {
+        console.error(`[2/5] Track index ${videoTrackIndex} out of range (count: ${videoTrackCount})`);
+        return { exported: 0, failed: 0, error: `Track index ${videoTrackIndex} out of range` };
+    }
 
-    // video track number
-    const videoTrackNumber = 0; // alter if needed // 0 = first track
+    // Save current mute states of all video tracks
+    const originalMuteStates = [];
+    for (let i = 0; i < videoTrackCount; i++) {
+        const track = await activeSequence.getVideoTrack(i);
+        const isMuted = await track.isMuted();
+        originalMuteStates.push(isMuted);
+    }
+    console.log(`[2/5] Saved mute states: ${JSON.stringify(originalMuteStates)}`);
 
+    // Set mute states based on exportEntireStack flag
+    if (!exportEntireStack) {
+        // Mute all tracks except the selected one
+        for (let i = 0; i < videoTrackCount; i++) {
+            const track = await activeSequence.getVideoTrack(i);
+            await track.setMute(i !== videoTrackIndex);
+        }
+        console.log(`[2/5] Muted all tracks except track ${videoTrackIndex}`);
+    }
+    // If exportEntireStack is true, keep all tracks unmuted (original state)
 
+    // Collect all clips to process
+    let allClips = [];
 
+    if (exportEntireStack) {
+        // Collect clips from all video tracks
+        console.log(`[2/5] Collecting clips from all ${videoTrackCount} tracks...`);
+        for (let trackIdx = 0; trackIdx < videoTrackCount; trackIdx++) {
+            const track = await activeSequence.getVideoTrack(trackIdx);
+            const trackItems = await track.getTrackItems(1, false);
+            console.log(`[2/5] Track ${trackIdx}: ${trackItems.length} clip(s)`);
+            allClips.push(...trackItems);
+        }
+    } else {
+        // Collect clips from the selected track only
+        const videoTrack = await activeSequence.getVideoTrack(videoTrackIndex);
+        allClips = await videoTrack.getTrackItems(1, false);
+        console.log(`[2/5] Collecting clips from track ${videoTrackIndex}: ${allClips.length} clip(s)`);
+    }
 
+    if (allClips.length === 0) {
+        console.warn('[2/5] No clips found.');
+        return { exported: 0, failed: 0, error: 'No clips found' };
+    }
 
-    // get VideoClipTrackItem
-    if (videoTrackCount > 0) {
-        const videoTrack = await activeSequence.getVideoTrack(videoTrackNumber);
-        const VideoClipTrackItems = await videoTrack.getTrackItems(1, false);
-        // console.log('[DEBUG] VideoClipTrackItems: ', VideoClipTrackItems);
+    // Preset path — adjust version folder if needed
+    const presetPath = `D:${sep}JuliansDev${sep}AdobePremierePro${sep}kipromanager${sep}payloads${sep}v26${sep}ALPINALE_Extracts_QT_h264_medium_quality.epr`;
+    console.log(`[3/5] Preset path: ${presetPath}`);
 
-        // Loop through each VideoClipTrackItem and log details
-        for (let i = 0; i < VideoClipTrackItems.length; i++) {
-            const item = VideoClipTrackItems[i];
+    // exportArea = false → AME uses sequence in/out points (not work area)
+    const exportArea = false;
 
-            // get clip details
-            const name = await item.getName();
-            const inPoint = await item.getInPoint();
-            const duration = await item.getDuration();
-            const outPoint = await item.getOutPoint();
-            console.log(`Clip ${i}: name=${name}, inPoint=${inPoint.seconds}sec, duration=${duration.seconds}sec, outPoint=${outPoint.seconds}sec`);
+    let exported = 0;
+    let failed = 0;
 
-            // setting in and out porint is not supported yet
-            // sequence.createSetInPointAction(tickTime: TickTime): Action
-            // sequence.createSetOutPointAction(tickTime: TickTime): Action
+    // Loop through each clip, set sequence in/out, queue to AME
+    for (let i = 0; i < allClips.length; i++) {
+        const item = allClips[i];
 
-            // const currentSequence = await item.getProjectItem();
-            // console.log(`Current sequence: ${currentSequence.name}`);
-            // const a = await ppro.TickTime.createWithSeconds(300); // or fromTicks, etc.
-            // const b = await ppro.TickTime.createWithSeconds(600); // or fromTicks, etc.
-            // const actionStartTime = await item.createSetInPointAction(a);
-            // const actionEndTime = await item.createSetOutPointAction(b);
-            // // console.log('[DEBUG] action: ', actionStartTime);
-            // executeCompoundAction(project, actionStartTime);
-            // executeCompoundAction(project, actionEndTime);
-            // console.log(`[DEBUG] done setting in and out points`);
+        // getStartTime/getEndTime are sequence-timeline positions (what we want for in/out markers)
+        const startTime = await item.getStartTime();
+        const endTime = await item.getEndTime();
+        const clipName = await item.getName();
 
-            // set in and out points for the clip
-            // const actionSetInPoint = await item.createSetInPointAction(inPoint);
+        console.log(`[4/5] Clip ${i + 1}/${allClips.length}: "${clipName}" — start: ${startTime.seconds}s, end: ${endTime.seconds}s`);
 
-            // const actionSetOutPoint = await item.createSetOutPointAction(outPoint);
-            // console.log('action: ', actionSetOutPoint);
-            // console.log(`Setting in and out points for clip: ${name}`);
-            // executeCompoundAction(project, actionSetZeroPoint);
-            // executeCompoundAction(project, actionSetOutPoint);
-            // console.log(`Set in and out points for clip: ${name}`);
-            break;
+        // Set sequence in/out markers to this clip's timeline range.
+        // Use sync lockedAccess callback (not async) to ensure transaction commits before returning.
+        try {
+            await executeCompoundAction(project, () => [
+                activeSequence.createSetInPointAction(startTime),
+                activeSequence.createSetOutPointAction(endTime),
+            ], 'Set clip in/out');
+            console.log(`[4/5] Clip ${i + 1}: sequence in/out set to ${startTime.seconds}s – ${endTime.seconds}s`);
+        } catch (e) {
+            console.error(`[4/5] Clip ${i + 1}: failed to set in/out points —`, e);
+            failed++;
+            continue;
         }
 
+        // Build output path using the clip name (sanitise slashes/colons from clip names)
+        const safeName = clipName.replace(/[\\/:*?"<>|]/g, '_');
+        const outputPath = `${clipExtractPath}${sep}${safeName}.mov`;
 
-    } else {
-        console.warn('No video tracks found in active sequence.');
+        // Wait for Premiere to fully flush the committed in/out state before AME reads it.
+        // First clip has no preceding iteration to warm things up, so needs the full delay.
+        const delay = i === 0 ? 1000 : 500;
+        await new Promise(resolve => setTimeout(resolve, delay));
+
+        console.log(`[5/5] Clip ${i + 1}: queuing to AME → ${outputPath}`);
+
+        const success = await sendToMEwithPreset(activeSequence, outputPath, presetPath, exportArea);
+        if (success) {
+            console.log(`[5/5] Clip ${i + 1}: queued successfully`);
+            exported++;
+        } else {
+            console.error(`[5/5] Clip ${i + 1}: failed to queue`);
+            failed++;
+        }
+
+        // On the last clip, reset sequence in/out markers to full duration
+        if (i === allClips.length - 1) {
+            try {
+                const zeroPoint = ppro.TickTime.createWithSeconds(0);
+                const seqEnd = await activeSequence.getEndTime();
+                await executeCompoundAction(project, () => [
+                    activeSequence.createSetInPointAction(zeroPoint),
+                    activeSequence.createSetOutPointAction(seqEnd),
+                ], 'Reset sequence in/out');
+                console.log('[5/5] Sequence in/out markers reset to full duration.');
+            } catch (e) {
+                console.warn('[5/5] Could not reset sequence in/out markers:', e);
+            }
+
+            try {
+                const zeroPoint = ppro.TickTime.createWithSeconds(0);
+                await executeCompoundAction(project, () => [
+                    activeSequence.createSetInPointAction(zeroPoint),
+                    activeSequence.createSetOutPointAction(zeroPoint),
+                ], 'Clear selection range');
+                console.log('[5/5] Selection range cleared (in/out both set to 0).');
+            } catch (e) {
+                console.warn('[5/5] Could not clear selection range:', e);
+            }
+
+            try {
+                await activeSequence.clearSelection();
+                console.log('[5/5] Sequence selection cleared.');
+            } catch (e) {
+                console.warn('[5/5] Could not clear sequence selection:', e);
+            }
+        }
     }
 
-    // get VideoClipTrackItem
+    // Restore original mute states
     try {
-        // const videoTrackIndex = await activeSequence.getVideoTrack(0);
-        // console.log('[DEBUG] VideoClipTrackItem created: ', videoTrackIndex);
-        // console.log('[DEBUG] VideoClipTrackItem index: ', videoTrackIndex.name);
-        // const inPoint = "2";
-        // const outPoint = xxx;
-        // executeCompoundAction(videoTrackIndex[0], inPoint);
+        for (let i = 0; i < videoTrackCount; i++) {
+            const track = await activeSequence.getVideoTrack(i);
+            await track.setMute(originalMuteStates[i]);
+        }
+        console.log('[5/5] Restored original mute states.');
     } catch (e) {
-        console.error('Error getting VideoClipTrackItem: ', e);
-        return;
+        console.warn('[5/5] Could not restore mute states:', e);
     }
 
-    // start loop for exporting each clip in the sequence
-    for (let i = 0; i < clipsAmount; i++) {
-
-        // setting inpoint for the clip to export
-        // const inPoint = await activeSequence.createSetZeroPointAction();
-
-        // NOT WORKING YET: SETTING IN AND OUT POINTS FOR EACH CLIP
-
-        // call export function
-        const exportFunction = await sendToMEwithPreset(activeSequence, outputPath, presetPath, exportArea);
-        console.log('Returned value: ', exportFunction);
-
-    }
-
+    console.log(`[5/5] Done — queued: ${exported}, failed: ${failed}`);
+    return { exported, failed };
 }
 
 

@@ -14,10 +14,10 @@
         <div id="tab-container">
           <div id="tab-nav">
             <my-button class="tab-btn tab-btn-first active" data-tab="tab-sequences">Sequence Creation</my-button>
+            <my-button class="tab-btn tab-btn-middle" data-tab="tab-filmslide">Filmslide Data</my-button>
             <my-button class="tab-btn tab-btn-middle" data-tab="tab-export-bin">Export from Bin</my-button>
             <my-button class="tab-btn tab-btn-middle" data-tab="tab-clip-extractor">Extract Bulk Clips</my-button>
-            <my-button class="tab-btn tab-btn-middle" data-tab="tab-export-selection">Export Selected Track</my-button>
-            <my-button class="tab-btn tab-btn-last" data-tab="tab-filmslide">Filmslide Data</my-button>
+            <my-button class="tab-btn tab-btn-last" data-tab="tab-export-selection">Export Selected Track</my-button>
           </div>
         </div>
 
@@ -110,8 +110,14 @@
           <div id="tab-clip-extractor" class="tab-content">
             <div class="tab-left">
               <sp-body id="plugin-body" style="position:relative;">
-                <h5>Video Track Name</h5>
-                <input type="text" id="input-clip-extract-video-track" placeholder="Enter video track name" value="Video 1" />
+                <sp-checkbox id="exportEntireStack" checked>Export entire video layer stack</sp-checkbox>
+                <divider></divider>
+
+                <h5>Video Track</h5>
+                <div class="path-input-row">
+                  <select id="select-clip-extract-video-track" style="flex:1;" disabled></select>
+                  <my-button id="btnRefreshClipExtractTracks">Refresh</my-button>
+                </div>
                 <divider></divider>
 
                 <h5>Export folder</h5>
@@ -121,14 +127,33 @@
                 </div>
                 <divider></divider>
 
-                <my-button id="btnExtractClips">Extract and bulk export Clips from current Timeline</my-button>
+                <my-button id="btnExtractClips">Extract and bulk export Clips from current Timeline (via AME)</my-button>
                 <h5 id="extractClipsStatusText"></h5>
               </sp-body>
             </div>
             <div class="tab-divider"></div>
             <div class="tab-right">
+                            <h4>Features</h4>
+              <p>
+                - Extracts and exports each indivual clip from the selected video track within the In/Out range of the active sequence.
+                <br>
+                - Uses a QuickTime container with medium h264 preset.
+                <br>
+                - Audio is always included.
+                <br><br>
+              </p>              
+              
               <h4>How to</h4>
-              <p>Extract each single clip from the active sequence of a specified track. Using a medium h264 preset. It looks at cut in between.</p>
+              <p>
+                - Set the video track name to extract (e.g. "Video 1").
+                <br>
+                - Set the export folder path or use Browse to pick one.
+                <br>
+                - (optional) Set in and out points in the active sequence to define the range to export from. If no in/out points are set, the whole sequence will be exported.
+                <br>
+                - Click export button to send all clips to AME.
+
+              </p>
             </div>
           </div>
 
@@ -153,8 +178,7 @@
             </div>
             <div class="tab-divider"></div>
             <div class="tab-right">
-              <h4>How to</h4>
-              <p>Extract the selected In/Out range from the active sequence. Uses medium h264 preset. Uses the clip name as export name.</p>
+
             </div>
           </div>
 
@@ -185,7 +209,7 @@
 
     <footer>
       <span id="footer-version-info">PPro — · UXP —</span>
-      <p>KiPro Manager Extension ver1.0.0</p>
+      <p>KiPro Manager Extension ver1.1.0</p>
     </footer>
 
   </body>
