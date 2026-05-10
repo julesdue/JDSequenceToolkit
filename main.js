@@ -187,7 +187,6 @@ if (document.readyState === "loading") {
 const { createSequencesFromBin } = require("./workflows/createSequencesFromBin.js");
 const { exportSequencesFromBin } = require("./workflows/exportSequencesFromBin.js");
 const { exportBulkExtractedClips } = require("./workflows/exportBulkExtractedClips.js");
-const { exportSelectedTrack } = require("./workflows/exportSelectedTrack.js");
 const { populateFilmslides } = require("./workflows/populateFilmslides.js");
 const { openUXPFileDialog } = require("./lib/openUXPFileDialog.js");
 const uxp = require('uxp');
@@ -363,16 +362,6 @@ document.querySelector("#btnBrowseClipExtractPath")?.addEventListener("click", a
   }
 });
 
-// Listener for browse export selection path button
-document.querySelector("#btnBrowseExportSelectionPath")?.addEventListener("click", async () => {
-  console.log("Browse Export Selection Path button clicked");
-  // @ts-ignore — localFileSystem exists in UXP runtime but is missing from type defs
-  const folder = await uxp.storage.localFileSystem.getFolder();
-  if (folder && folder.nativePath) {
-    /** @type {HTMLInputElement} */ (document.getElementById("input-export-selection-basepath")).value = folder.nativePath;
-    console.log(`Export selection path set to: ${folder.nativePath}`);
-  }
-});
 
 // Listener for export sequences button
 document.querySelector("#btnExportSequences").addEventListener("click", async () => {
@@ -460,30 +449,6 @@ document.querySelector("#btnExtractClips").addEventListener("click", async () =>
 
 
 
-// Listener for export selection button
-document.querySelector("#btnExportSequenceSelection").addEventListener("click", async () => {
-  console.log("Export Selection button clicked");
-  const statusEl = document.getElementById("exportSelectionStatusText");
-
-  // Get input values from the UI
-  const exportSelectionPath = document.getElementById("input-export-selection-basepath").value;
-  console.log(`Export selection basepath: ${exportSelectionPath}`);
-  const videoTrackName = document.getElementById("input-export-selection-video-track").value;
-  console.log(`Video track name: ${videoTrackName}`);
-
-  if (statusEl) statusEl.textContent = "Exporting selection...";
-
-  try {
-    await exportSelectedTrack(sep, exportSelectionPath, videoTrackName);
-    console.log(`Done exporting selection`);
-    if (statusEl) statusEl.textContent = `✅ Done — selection exported`;
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error(`Error exporting selection from path: ${exportSelectionPath}`, error);
-    if (statusEl) statusEl.textContent = `❌ Error: ${msg}`;
-    alert(`Failed to export selection: ${msg}`);
-  }
-});
 
 
 // ===== Filmslide Data Insert Workflow =====

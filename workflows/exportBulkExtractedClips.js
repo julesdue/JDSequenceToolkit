@@ -60,6 +60,25 @@ async function exportBulkExtractedClips(sep, clipExtractPath, videoTrackIndex, e
     }
     // If exportEntireStack is true, keep all tracks unmuted (original state)
 
+    // Check if sequence has in/out points defined
+    let rangeInPoint = null;
+    let rangeOutPoint = null;
+    try {
+        const seqInPoint = await activeSequence.getInPoint();
+        const seqOutPoint = await activeSequence.getOutPoint();
+        const seqStart = ppro.TickTime.createWithSeconds(0);
+        const seqEnd = await activeSequence.getEndTime();
+
+        // Check if in/out points are different from sequence start/end (meaning a range is defined)
+        if (seqInPoint.seconds !== seqStart.seconds || seqOutPoint.seconds !== seqEnd.seconds) {
+            rangeInPoint = seqInPoint;
+            rangeOutPoint = seqOutPoint;
+            console.log(`[2/5] Range detected: ${rangeInPoint.seconds}s – ${rangeOutPoint.seconds}s`);
+        }
+    } catch (e) {
+        console.warn('[2/5] Could not read sequence in/out points:', e);
+    }
+
     // Collect all clips to process
     let allClips = [];
 
@@ -77,6 +96,22 @@ async function exportBulkExtractedClips(sep, clipExtractPath, videoTrackIndex, e
         const videoTrack = await activeSequence.getVideoTrack(videoTrackIndex);
         allClips = await videoTrack.getTrackItems(1, false);
         console.log(`[2/5] Collecting clips from track ${videoTrackIndex}: ${allClips.length} clip(s)`);
+    }
+
+    // Filter clips based on in/out range if one is defined
+    if (rangeInPoint !== null && rangeOutPoint !== null) {
+        const filteredClips = [];
+        for (const clip of allClips) {
+            const clipStart = await clip.getStartTime();
+            const clipEnd = await clip.getEndTime();
+
+            // Include clip if it overlaps with the defined range
+            if (clipEnd.seconds > rangeInPoint.seconds && clipStart.seconds < rangeOutPoint.seconds) {
+                filteredClips.push(clip);
+            }
+        }
+        console.log(`[2/5] Filtered to ${filteredClips.length} clip(s) within range`);
+        allClips = filteredClips;
     }
 
     if (allClips.length === 0) {
@@ -99,11 +134,22 @@ async function exportBulkExtractedClips(sep, clipExtractPath, videoTrackIndex, e
         const item = allClips[i];
 
         // getStartTime/getEndTime are sequence-timeline positions (what we want for in/out markers)
-        const startTime = await item.getStartTime();
-        const endTime = await item.getEndTime();
+        let startTime = await item.getStartTime();
+        let endTime = await item.getEndTime();
         const clipName = await item.getName();
 
-        console.log(`[4/5] Clip ${i + 1}/${allClips.length}: "${clipName}" — start: ${startTime.seconds}s, end: ${endTime.seconds}s`);
+        // For clips at range boundaries, use the range in/out instead of clip start/end
+        if (rangeInPoint !== null && i === 0) {
+            // First clip: use range in-point as start
+            startTime = rangeInPoint;
+            console.log(`[4/5] Clip ${i + 1}/${allClips.length}: "${clipName}" — adjusted start (range): ${startTime.seconds}s, end: ${endTime.seconds}s`);
+        } else if (rangeOutPoint !== null && i === allClips.length - 1) {
+            // Last clip: use range out-point as end
+            endTime = rangeOutPoint;
+            console.log(`[4/5] Clip ${i + 1}/${allClips.length}: "${clipName}" — start: ${startTime.seconds}s, adjusted end (range): ${endTime.seconds}s`);
+        } else {
+            console.log(`[4/5] Clip ${i + 1}/${allClips.length}: "${clipName}" — start: ${startTime.seconds}s, end: ${endTime.seconds}s`);
+        }
 
         // Set sequence in/out markers to this clip's timeline range.
         // Use sync lockedAccess callback (not async) to ensure transaction commits before returning.

@@ -193,6 +193,7 @@ input[type="text"]:disabled {
 /* Checkbox Styling */
 sp-checkbox {
   font-size: 12px;
+  margin: 0px;
 }
 
 /* Button Styling */
