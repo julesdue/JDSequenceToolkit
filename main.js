@@ -534,6 +534,7 @@ document.querySelector("#btnInsertFilmslideData").addEventListener("click", asyn
   console.log("Insert Filmslide Data button clicked");
   const statusEl = document.getElementById("csvStatusText");
   const folderStatusEl = document.getElementById("folderStatusText");
+  const filmslideStatusEl = document.getElementById("filmslideStatusText");
 
   try {
     // Get selected folder from project panel
@@ -585,16 +586,20 @@ document.querySelector("#btnInsertFilmslideData").addEventListener("click", asyn
       console.log(`✅ Filmslide data insertion successful: ${result.message}`);
       statusEl.textContent = `✅ ${result.message}`;
       folderStatusEl.textContent = `📁 "${folderName}" - Complete`;
+      if (filmslideStatusEl) filmslideStatusEl.textContent = `✅ ${result.message}`;
     } else {
       console.log(`❌ Filmslide data insertion failed: ${result.error}`);
       statusEl.textContent = `❌ ${result.error}`;
       folderStatusEl.textContent = `📁 "${folderName}" - Error`;
+      if (filmslideStatusEl) filmslideStatusEl.textContent = `❌ ${result.error}`;
     }
 
     console.log("Filmslide data insertion workflow complete");
   } catch (error) {
     console.error("Error inserting filmslide data:", error);
-    statusEl.textContent = `❌ Error: ${error.message || error}`;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    statusEl.textContent = `❌ Error: ${errorMessage}`;
+    if (filmslideStatusEl) filmslideStatusEl.textContent = `❌ Error: ${errorMessage}`;
     console.log(`Error details: ${error instanceof Error ? error.stack : String(error)}`);
   }
 });
