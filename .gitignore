@@ -2,3 +2,7 @@ build-html
 
 # IDE
 CLAUDE.md
+.vscode/
+.kilo/
+.github/
+.claude/
