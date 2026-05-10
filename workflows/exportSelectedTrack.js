@@ -7,8 +7,8 @@ const ppro = require("premierepro");
 // const { localFileSystem, types } = require('uxp').storage;
 
 
-async function exportSequenceSelection(sep, exportBasePath, videoTrackName) {
-    console.log('exportSequenceSelection called');
+async function exportSelectedTrack(sep, exportBasePath, videoTrackName) {
+    console.log('exportSelectedTrack called');
 
     // Get the current project using UXP API
     const project = await ppro.Project.getActiveProject();
@@ -94,4 +94,4 @@ async function exportSequenceSelection(sep, exportBasePath, videoTrackName) {
     }
 
 }
-module.exports = { exportSequenceSelection };
+module.exports = { exportSelectedTrack };

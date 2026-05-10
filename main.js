@@ -2,6 +2,7 @@
 const os = require('os');
 const ppro = require("premierepro");
 const path = require('path');
+const { getEnvironmentInfo } = require("./lib/getVersionAwareResources.js");
 
 
 console.log("KiPro Manager plugin loaded");
@@ -58,7 +59,7 @@ function setupTabs() {
       // Add active class to clicked button, target content, and target info
       button.classList.add("active");
       document.getElementById(targetTab).classList.add("active");
-      document.getElementById(targetInfo).classList.add("active");
+      document.getElementById(targetInfo)?.classList.add("active");
 
       console.log(`Tab switched to: ${targetTab}, Info: ${targetInfo}`);
     });
@@ -103,11 +104,11 @@ function setupResizableDivider() {
       const delta = e.clientX - startX;
       const newLeftWidth = startLeftWidth + delta;
       const minWidth = 200;
-      const maxWidth = tabContent.offsetWidth - 200;
+      const maxWidth = tabContent.offsetWidth - /** @type {HTMLElement} */ (divider).offsetWidth - 200;
 
       if (newLeftWidth > minWidth && newLeftWidth < maxWidth) {
         tabLeft.style.flex = `0 0 ${newLeftWidth}px`;
-        tabRight.style.width = `${tabContent.offsetWidth - newLeftWidth - 4}px`;
+        tabRight.style.flex = "1";
       }
     });
 
@@ -127,6 +128,25 @@ if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", setupResizableDivider);
 } else {
   setupResizableDivider();
+}
+
+// === Footer Version Info ===
+function populateFooterVersionInfo() {
+  const el = document.getElementById("footer-version-info");
+  if (!el) return;
+  try {
+    const info = /** @type {{premiereVersion: string, uxpVersion: string}} */ (getEnvironmentInfo());
+    el.textContent = `PPro ${info.premiereVersion} · UXP ${info.uxpVersion}`;
+  } catch (e) {
+    el.textContent = "PPro — · UXP —";
+    console.warn("Could not populate footer version info:", e instanceof Error ? e.message : String(e));
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", populateFooterVersionInfo);
+} else {
+  populateFooterVersionInfo();
 }
 
 // === Checkbox Controls ===
@@ -164,12 +184,13 @@ if (document.readyState === "loading") {
 }
 
 // UXP scripts and API as CommonJS modules
-const { createSequencesFromFolder } = require("./workflows/createSequencesFromFolder.js");
-const { exportSequencesToAME } = require("./workflows/exportSequencesToAME.js");
-const { extractClipsFromSequence } = require("./workflows/extractClipsFromSequence.js");
-const { exportSequenceSelection } = require("./workflows/exportSequenceSelection.js");
+const { createSequencesFromBin } = require("./workflows/createSequencesFromBin.js");
+const { exportSequencesFromBin } = require("./workflows/exportSequencesFromBin.js");
+const { exportBulkExtractedClips } = require("./workflows/exportBulkExtractedClips.js");
+const { exportSelectedTrack } = require("./workflows/exportSelectedTrack.js");
 const { populateFilmslides } = require("./workflows/populateFilmslides.js");
 const { openUXPFileDialog } = require("./lib/openUXPFileDialog.js");
+const uxp = require('uxp');
 const { parseCSV } = require("./lib/parseCSV.js");
 const { createMappingPopup } = require("./lib/createMappingPopup.js");
 const { memoryStorage } = require("./lib/memoryStorage.js");
@@ -187,13 +208,42 @@ console.log(`OS platform: ${os.platform()}, separator: '${sep}'`);
 
 
 
+// === Button Listeners ===
+function setupButtonListeners() {
+
 // Listener for create sequences button
 document.querySelector("#btnCreateSequences").addEventListener("click", async () => {
   console.log("Create Sequences button clicked");
+  const statusEl = document.getElementById("sequenceStatusText");
 
-  // Get input values from the UI
-  const folderName = document.getElementById("input-bin-name").value;
-  console.log(`Folder name: ${folderName}`);
+  // Resolve selected bin from project panel
+  let folderItem = null;
+  try {
+    const project = await ppro.Project.getActiveProject();
+    const projectSelection = await ppro.ProjectUtils.getSelection(project);
+    const selection = await projectSelection.getItems();
+
+    if (!selection || selection.length === 0) {
+      statusEl.textContent = "❌ No bin selected — select a bin in the project panel first";
+      alert("No bin selected.\nPlease select a bin in the project panel first.");
+      return;
+    }
+
+    const selectedItem = selection[0];
+    folderItem = ppro.FolderItem.cast(selectedItem);
+    if (!folderItem) {
+      statusEl.textContent = "❌ Selected item is not a bin";
+      alert("Selected item is not a bin.\nPlease select a bin (folder) in the project panel.");
+      return;
+    }
+  } catch (e) {
+    statusEl.textContent = "❌ No bin in project panel selected";
+    alert(`No bin in project panel selected:\n${e.message || e}`);
+    return;
+  }
+
+  console.log(`Selected bin: ${folderItem.name}`);
+  statusEl.textContent = `Processing bin "${folderItem.name}"...`;
 
   // Check if black frame insertion is enabled
   const insertBlackFrameCheckbox = document.getElementById("insertBlackFrame");
@@ -202,8 +252,6 @@ document.querySelector("#btnCreateSequences").addEventListener("click", async ()
   if (insertBlackFrame) {
     blackFrameName = document.getElementById("input-black-frame-name").value;
     console.log(`Black frame name: ${blackFrameName}`);
-  } else {
-    console.log("Black frame insertion disabled");
   }
 
   // Check if MOGRT insertion is enabled
@@ -213,34 +261,106 @@ document.querySelector("#btnCreateSequences").addEventListener("click", async ()
   if (insertMogrt) {
     mogrtName = document.getElementById("input-mogrt-name").value;
     console.log(`MOGRT name: ${mogrtName}`);
-  } else {
-    console.log("MOGRT insertion disabled");
   }
 
   try {
-    await createSequencesFromFolder(sep, folderName, insertBlackFrame ? blackFrameName : "", insertMogrt ? mogrtName : "");
-    console.log(`Done creating sequences for bin: ${folderName}`);
+    const result = await createSequencesFromBin(sep, folderItem, insertBlackFrame ? blackFrameName : "", insertMogrt ? mogrtName : "");
+    console.log(`Done creating sequences for bin: ${folderItem.name}`);
+    if (result?.created === 0) {
+      statusEl.textContent = `❌ No video files found in "${folderItem.name}"`;
+    } else {
+      statusEl.textContent = `✅ Done — ${result?.created} sequence(s) created in "${folderItem.name}"`;
+    }
   } catch (error) {
-    console.error(`Error creating sequences for bin: ${folderName}`, error);
+    console.error(`Error creating sequences for bin: ${folderItem.name}`, error);
+    statusEl.textContent = `❌ Error: ${error.message || error}`;
     alert(`Failed to create sequences: ${error.message || error}`);
+  }
+});
+
+// Listener for browse export path button
+document.querySelector("#btnBrowseExportPath").addEventListener("click", async () => {
+  console.log("Browse Export Path button clicked");
+  // @ts-ignore — localFileSystem exists in UXP runtime but is missing from type defs
+  const folder = await uxp.storage.localFileSystem.getFolder();
+  if (folder && folder.nativePath) {
+    /** @type {HTMLInputElement} */ (document.getElementById("input-export-base-path")).value = folder.nativePath;
+    console.log(`Export path set to: ${folder.nativePath}`);
+  }
+});
+
+// Listener for browse clip extract path button
+document.querySelector("#btnBrowseClipExtractPath")?.addEventListener("click", async () => {
+  console.log("Browse Clip Extract Path button clicked");
+  // @ts-ignore — localFileSystem exists in UXP runtime but is missing from type defs
+  const folder = await uxp.storage.localFileSystem.getFolder();
+  if (folder && folder.nativePath) {
+    /** @type {HTMLInputElement} */ (document.getElementById("input-clip-extract-basepath")).value = folder.nativePath;
+    console.log(`Clip extract path set to: ${folder.nativePath}`);
+  }
+});
+
+// Listener for browse export selection path button
+document.querySelector("#btnBrowseExportSelectionPath")?.addEventListener("click", async () => {
+  console.log("Browse Export Selection Path button clicked");
+  // @ts-ignore — localFileSystem exists in UXP runtime but is missing from type defs
+  const folder = await uxp.storage.localFileSystem.getFolder();
+  if (folder && folder.nativePath) {
+    /** @type {HTMLInputElement} */ (document.getElementById("input-export-selection-basepath")).value = folder.nativePath;
+    console.log(`Export selection path set to: ${folder.nativePath}`);
   }
 });
 
 // Listener for export sequences button
 document.querySelector("#btnExportSequences").addEventListener("click", async () => {
   console.log("Export Sequences button clicked");
+  const statusEl = document.getElementById("exportStatusText");
 
-  // Get input values from the UI
-  const folderName = document.getElementById("input-bin-name").value;
-  console.log(`Bin name: ${folderName}`);
+  // Resolve selected bin from project panel
+  let folderItem = null;
+  try {
+    const project = await ppro.Project.getActiveProject();
+    const projectSelection = await ppro.ProjectUtils.getSelection(project);
+    const selection = await projectSelection.getItems();
+
+    if (!selection || selection.length === 0) {
+      statusEl.textContent = "❌ No bin selected — select a bin in the project panel first";
+      alert("No bin selected.\nPlease select a bin in the project panel first.");
+      return;
+    }
+
+    const selectedItem = selection[0];
+    folderItem = ppro.FolderItem.cast(selectedItem);
+    if (!folderItem) {
+      statusEl.textContent = "❌ Selected item is not a bin";
+      alert("Selected item is not a bin.\nPlease select a bin (folder) in the project panel.");
+      return;
+    }
+  } catch (e) {
+    statusEl.textContent = "❌ No bin in project panel selected";
+    alert(`No bin in project panel selected:\n${e.message || e}`);
+    return;
+  }
+
   const exportBasePath = document.getElementById("input-export-base-path").value;
   console.log(`Export base path: ${exportBasePath}`);
+  statusEl.textContent = `Exporting sequences from "${folderItem.name}"...`;
 
   try {
-    await exportSequencesToAME(sep, folderName, exportBasePath);
-    console.log(`Done exporting sequences for bin: ${folderName}`);
+    const result = await exportSequencesFromBin(sep, folderItem, exportBasePath);
+    console.log(`Done — queued ${result.exported}, failed ${result.failed} for bin: ${folderItem.name}`);
+    if (result.exported === 0 && result.failed === 0) {
+      statusEl.textContent = `⚠️ No sequences found in "${folderItem.name}"`;
+    } else if (result.failed > 0 && result.exported === 0) {
+      statusEl.textContent = `❌ Failed to queue sequences — is Adobe Media Encoder open?`;
+    } else if (result.failed > 0) {
+      statusEl.textContent = `⚠️ Queued ${result.exported} to AME, ${result.failed} failed`;
+    } else {
+      statusEl.textContent = `✅ Queued ${result.exported} sequence(s) to Adobe Media Encoder`;
+    }
   } catch (error) {
-    console.error(`Error exporting sequences for bin: ${folderName}`, error);
+    console.error(`Error exporting sequences for bin: ${folderItem.name}`, error);
+    statusEl.textContent = `❌ Error: ${error.message || error}`;
     alert(`Failed to export sequences: ${error.message || error}`);
   }
 });
@@ -250,6 +370,7 @@ document.querySelector("#btnExportSequences").addEventListener("click", async ()
 // Listener for extract clips button
 document.querySelector("#btnExtractClips").addEventListener("click", async () => {
   console.log("Extract Clips button clicked");
+  const statusEl = document.getElementById("extractClipsStatusText");
 
   // Get input values from the UI
   const clipExtractPath = document.getElementById("input-clip-extract-basepath").value;
@@ -257,12 +378,17 @@ document.querySelector("#btnExtractClips").addEventListener("click", async () =>
   const videoTrackName = document.getElementById("input-clip-extract-video-track").value;
   console.log(`Video track name: ${videoTrackName}`);
 
+  if (statusEl) statusEl.textContent = "Extracting clips...";
+
   try {
-    await extractClipsFromSequence(sep, clipExtractPath, videoTrackName);
+    await exportBulkExtractedClips(sep, clipExtractPath, videoTrackName);
     console.log(`Done sending extracted clips to MediaEncoder`);
+    if (statusEl) statusEl.textContent = `✅ Done — clips sent to Media Encoder`;
   } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
     console.error(`Error extracting clips from path: ${clipExtractPath}`, error);
-    alert(`Failed to extract clips: ${error.message || error}`);
+    if (statusEl) statusEl.textContent = `❌ Error: ${msg}`;
+    alert(`Failed to extract clips: ${msg}`);
   }
 });
 
@@ -271,6 +397,7 @@ document.querySelector("#btnExtractClips").addEventListener("click", async () =>
 // Listener for export selection button
 document.querySelector("#btnExportSequenceSelection").addEventListener("click", async () => {
   console.log("Export Selection button clicked");
+  const statusEl = document.getElementById("exportSelectionStatusText");
 
   // Get input values from the UI
   const exportSelectionPath = document.getElementById("input-export-selection-basepath").value;
@@ -278,12 +405,17 @@ document.querySelector("#btnExportSequenceSelection").addEventListener("click", 
   const videoTrackName = document.getElementById("input-export-selection-video-track").value;
   console.log(`Video track name: ${videoTrackName}`);
 
+  if (statusEl) statusEl.textContent = "Exporting selection...";
+
   try {
-    await exportSequenceSelection(sep, exportSelectionPath, videoTrackName);
+    await exportSelectedTrack(sep, exportSelectionPath, videoTrackName);
     console.log(`Done exporting selection`);
+    if (statusEl) statusEl.textContent = `✅ Done — selection exported`;
   } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
     console.error(`Error exporting selection from path: ${exportSelectionPath}`, error);
-    alert(`Failed to export selection: ${error.message || error}`);
+    if (statusEl) statusEl.textContent = `❌ Error: ${msg}`;
+    alert(`Failed to export selection: ${msg}`);
   }
 });
 
@@ -398,3 +530,11 @@ document.querySelector("#btnInsertFilmslideData").addEventListener("click", asyn
     statusEl.textContent = `❌ Error: ${error.message || error}`;
   }
 });
+
+} // end setupButtonListeners
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", setupButtonListeners);
+} else {
+  setupButtonListeners();
+}

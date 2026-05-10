@@ -13,54 +13,95 @@
         <!-- Tab Navigation -->
         <div id="tab-container">
           <div id="tab-nav">
-            <run-button class="tab-btn active" data-tab="tab-sequences">Sequence Creation</button>
-            <run-button class="tab-btn" data-tab="tab-clip-extractor">Bulk Clip Extractor</button>
-            <run-button class="tab-btn" data-tab="tab-export-selection">Export Selection</button>
-            <run-button class="tab-btn" data-tab="tab-filmslide">Filmslide Data</button>
+            <my-button class="tab-btn tab-btn-first active" data-tab="tab-sequences">Sequence Creation</my-button>
+            <my-button class="tab-btn tab-btn-middle" data-tab="tab-export-bin">Export from Bin</my-button>
+            <my-button class="tab-btn tab-btn-middle" data-tab="tab-clip-extractor">Extract Bulk Clips</my-button>
+            <my-button class="tab-btn tab-btn-middle" data-tab="tab-export-selection">Export Selected Track</my-button>
+            <my-button class="tab-btn tab-btn-last" data-tab="tab-filmslide">Filmslide Data</my-button>
           </div>
         </div>
 
         <!-- Tab Content Wrapper -->
         <div id="tab-content-wrapper">
-          <!-- Tab Content: Sequence Creation & Exporting -->
+          
+          <!-- Tab Content: Sequence Creation from selected Bin -->
           <div id="tab-sequences" class="tab-content active">
             <div class="tab-left">
               <sp-body id="plugin-body" style="position:relative;">
-                <h5>Name of bin to create sequences</h5>
-                <input type="text" id="input-bin-name" placeholder="Enter bin name" value="test" />
-                <divider-line></divider-line>
-
                 <sp-checkbox id="insertBlackFrame" checked>Insert black frame at beginning</sp-checkbox>
-                <h5>Name of black frame at beginning</h5>
                 <input type="text" id="input-black-frame-name" placeholder="Enter black_frame name" value="schwarz_frame" />
                 <divider-line></divider-line>
 
                 <sp-checkbox id="insertMogrt" checked>Insert Filmslide .mogrt</sp-checkbox>
-                <h5>Filmslide .mogrt file name</h5>
                 <input type="text" id="input-mogrt-name" placeholder="Enter mogrt name" value="ALPINALE_filmvorspannslides" />
                 <divider-line></divider-line>
 
-                <run-button id="btnCreateSequences">Create Sequences from Film Files</run-button>
-                <divider></divider>
-                <divider-line></divider-line>
-
-
-                <h5>Export base path</h5>
-                <input type="text" id="input-export-base-path" placeholder="Enter export base path" value="C:\Users\julia\Desktop\temp" />
-                <divider></divider>
-
-                <run-button id="btnExportSequences">Export Sequences to ME</run-button>
+                <my-button id="btnCreateSequences">Create Sequences from selected Bin</my-button>
+                <h5 id="sequenceStatusText"></h5>
               </sp-body>
             </div>
             <div class="tab-divider"></div>
             <div class="tab-right">
-              <h4>How to</h4>
-              <p>Create sequences from folder structure with automatic clip insertion and black frame handling.
+              <h4>Features</h4>
+              <p>
+                - Creates sequences from seleced bin
+                <br>
+                - Dynamic FPS adjustment of sequence
+                <br>
+                - Add suffix "_dnx" at the end of the sequence name
                 <br><br>
-                The script looks for film files in the project panel and creates sequences based on the folder structure.
+              </p>
+              
+              <h4>How to</h4>
+              <p>
+                - Adjust the audio channel of all film files in the selected bin to mono before creating the sequences (SIFT + G).
+                <br>
+                - Select a bin in the project panel containing the film files.
+                <br>
+                - Create a new black frame clip in the project panel and enter its name in the input field.
+                <br>
+                - Import the .mogrt file for the film-data-slide into the project panel and enter its name in the input field.
+                <br>
+                - Click on the button to execute it.
                 <br><br>
                 Already existing sequecnes with the same name will be skipped.
 
+              </p>
+            </div>
+          </div>
+
+          <!-- Tab Content: Export Sequences from Bin -->
+          <div id="tab-export-bin" class="tab-content">
+            <div class="tab-left">
+              <sp-body id="plugin-body" style="position:relative;">
+                <h5>Export folder</h5>
+                <div class="path-input-row">
+                  <input type="text" id="input-export-base-path" placeholder="Enter export base path" value="C:\Users\julia\Desktop\temp" />
+                  <my-button id="btnBrowseExportPath">Browse</my-button>
+                </div>
+                <divider></divider>
+
+                <my-button id="btnExportSequences">Export Sequences from selected Bin (via AME)</my-button>
+                <h5 id="exportStatusText"></h5>
+              </sp-body>
+            </div>
+            <div class="tab-divider"></div>
+            <div class="tab-right">
+              <h4>Features</h4>
+              <p>
+                - Exports all sequences from selected bin via Adobe Media Encoder
+                <br>
+                - Uses a predfined export preset currently set to "KiPro Export ver2.5"
+                <br><br>
+              </p>
+              
+              <h4>How to</h4>
+              <p>
+                - Select a bin in the project panel containing the sequences to export.
+                <br>
+                - Set the export folder path or use Browse to pick one.
+                <br>
+                - Click Export Sequences to ME to queue all sequences in the bin to Adobe Media Encoder.
               </p>
             </div>
           </div>
@@ -73,11 +114,15 @@
                 <input type="text" id="input-clip-extract-video-track" placeholder="Enter video track name" value="Video 1" />
                 <divider></divider>
 
-                <h5>Path to extract clips</h5>
-                <input type="text" id="input-clip-extract-basepath" placeholder="Enter clip extract path" value="C:\Users\julia\Desktop\temp" />
+                <h5>Export folder</h5>
+                <div class="path-input-row">
+                  <input type="text" id="input-clip-extract-basepath" placeholder="Enter clip extract path" value="C:\Users\julia\Desktop\temp" />
+                  <my-button id="btnBrowseClipExtractPath">Browse</my-button>
+                </div>
                 <divider></divider>
 
-                <run-button id="btnExtractClips">Bulk extract Clips</run-button>
+                <my-button id="btnExtractClips">Extract and bulk export Clips from current Timeline</my-button>
+                <h5 id="extractClipsStatusText"></h5>
               </sp-body>
             </div>
             <div class="tab-divider"></div>
@@ -95,11 +140,15 @@
                 <input type="text" id="input-export-selection-video-track" placeholder="Enter video track name" value="Video 1" />
                 <divider></divider>
                 
-                <h5>Base path to extract clips</h5>
-                <input type="text" id="input-export-selection-basepath" placeholder="Enter in/out extract path" value="C:\Users\julia\Desktop\temp" />
+                <h5>Export folder</h5>
+                <div class="path-input-row">
+                  <input type="text" id="input-export-selection-basepath" placeholder="Enter in/out extract path" value="C:\Users\julia\Desktop\temp" />
+                  <my-button id="btnBrowseExportSelectionPath">Browse</my-button>
+                </div>
                 <divider></divider>
 
-                <run-button id="btnExportSequenceSelection">Export Selection</run-button>
+                <my-button id="btnExportSequenceSelection">Export Selected Track</my-button>
+                <h5 id="exportSelectionStatusText"></h5>
               </sp-body>
             </div>
             <div class="tab-divider"></div>
@@ -113,13 +162,13 @@
           <div id="tab-filmslide" class="tab-content">
             <div class="tab-left">
               <sp-body id="plugin-body" style="position:relative;">
-                <run-button id="btnLoadCSV">Select a .csv file</run-button>
-                <run-button id="btnDownloadSampleCSV">Download sample .csv file</run-button>
+                <my-button id="btnLoadCSV">Select a .csv file</my-button>
+                <my-button id="btnDownloadSampleCSV">Download sample .csv file</my-button>
                 <sp-description id="csvStatusText"></sp-description>
                 <divider></divider>
                 
                 <sp-description id="folderStatusText" style="font-size: 12px; color: #999;">Select a folder in the project panel, then click Insert</sp-description>
-                <run-button id="btnInsertFilmslideData">Insert Filmslide Data</run-button>
+                <my-button id="btnInsertFilmslideData">Insert Filmslide Data</my-button>
               </sp-body>
             </div>
             <div class="tab-divider"></div>
@@ -135,6 +184,7 @@
     </div>
 
     <footer>
+      <span id="footer-version-info">PPro — · UXP —</span>
       <p>KiPro Manager Extension ver1.0.0</p>
     </footer>
 

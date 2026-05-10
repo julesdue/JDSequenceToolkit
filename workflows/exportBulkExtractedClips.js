@@ -6,8 +6,8 @@ const { executeCompoundAction } = require('../lib/executeCompoundAction.js');
 const ppro = require("premierepro");
 
 // Function
-async function extractClipsFromSequence(sep, clipExtractPath, videoTrackName) {
-    console.log('extractClipsFromSequence called');
+async function exportBulkExtractedClips(sep, clipExtractPath, videoTrackName) {
+    console.log('exportBulkExtractedClips called');
 
     // Get the current project using UXP API
     const project = await ppro.Project.getActiveProject();
@@ -39,10 +39,11 @@ async function extractClipsFromSequence(sep, clipExtractPath, videoTrackName) {
 
     // get all video tracks
     const videoTrackCount = await activeSequence.getVideoTrackCount();
-    
+
     // video track number
     const videoTrackNumber = 0; // alter if needed // 0 = first track
-    
+
+
 
 
 
@@ -51,11 +52,11 @@ async function extractClipsFromSequence(sep, clipExtractPath, videoTrackName) {
         const videoTrack = await activeSequence.getVideoTrack(videoTrackNumber);
         const VideoClipTrackItems = await videoTrack.getTrackItems(1, false);
         // console.log('[DEBUG] VideoClipTrackItems: ', VideoClipTrackItems);
-        
+
         // Loop through each VideoClipTrackItem and log details
         for (let i = 0; i < VideoClipTrackItems.length; i++) {
             const item = VideoClipTrackItems[i];
-            
+
             // get clip details
             const name = await item.getName();
             const inPoint = await item.getInPoint();
@@ -66,7 +67,7 @@ async function extractClipsFromSequence(sep, clipExtractPath, videoTrackName) {
             // setting in and out porint is not supported yet
             // sequence.createSetInPointAction(tickTime: TickTime): Action
             // sequence.createSetOutPointAction(tickTime: TickTime): Action
-            
+
             // const currentSequence = await item.getProjectItem();
             // console.log(`Current sequence: ${currentSequence.name}`);
             // const a = await ppro.TickTime.createWithSeconds(300); // or fromTicks, etc.
@@ -80,7 +81,7 @@ async function extractClipsFromSequence(sep, clipExtractPath, videoTrackName) {
 
             // set in and out points for the clip
             // const actionSetInPoint = await item.createSetInPointAction(inPoint);
-            
+
             // const actionSetOutPoint = await item.createSetOutPointAction(outPoint);
             // console.log('action: ', actionSetOutPoint);
             // console.log(`Setting in and out points for clip: ${name}`);
@@ -126,4 +127,4 @@ async function extractClipsFromSequence(sep, clipExtractPath, videoTrackName) {
 
 
 
-module.exports = { extractClipsFromSequence };
+module.exports = { exportBulkExtractedClips };
