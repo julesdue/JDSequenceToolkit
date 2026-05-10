@@ -1,4 +1,7 @@
-build-html
+# adobe specific
+build-html/
+node_modules/
+dist/
 
 # IDE
 CLAUDE.md

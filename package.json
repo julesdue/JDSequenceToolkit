@@ -3,5 +3,9 @@
   "version": "1.0.0",
   "description": "UXP plugin for prepping and creating files for playback utelizing the hardware AJA KiPro Playback.",
   "author": "Julian Duenser",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@adobe/cc-ext-uxp-types": "^7.3.1",
+    "@types/node": "^25.6.2"
+  }
 }

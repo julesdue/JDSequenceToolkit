@@ -146,7 +146,9 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName, mogrtN
                 } else {
                     let moveAction;
                     await project.lockedAccess(() => {
-                        const seqProjItem = newSeq.getProjectItem(); // NO await
+                        const seqProjItem = newSeq.getProjectItem();
+                        console.log('seqProjItem:', seqProjItem, 'type:', typeof seqProjItem);
+                        console.log('freshFolderItem:', freshFolderItem, 'type:', typeof freshFolderItem);
                         moveAction = rootItem.createMoveItemAction(seqProjItem, freshFolderItem);
                     });
 
@@ -173,8 +175,8 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName, mogrtN
 
                 if (videoTrackCount > 0) {
 
-                    // ✅ Pre-resolve TickTime BEFORE lockedAccess (it's async, can't await inside sync callback)
-                    const timeZero = await ppro.TickTime.createWithSeconds(0);
+                    // ✅ Pre-resolve TickTime BEFORE lockedAccess (it's sync, not async)
+                    const timeZero = ppro.TickTime.createWithSeconds(0);
 
                     // ✅ Build actions synchronously inside lockedAccess — NO async, NO await inside
                     let builtActions = [];
@@ -183,27 +185,32 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName, mogrtN
                         const sequenceEditor = ppro.SequenceEditor.getEditor(newSeq);
                         const actions = [];
                         console.log('Sequence editor acquired inside locked access');
+                        console.log('timeZero type:', typeof timeZero, 'value:', timeZero);
 
                         // Black frame
                         if (blackFrameName) {
                             const projItemBlackFrame = ppro.ClipProjectItem.cast(blackFrameObject);
                             if (projItemBlackFrame) {
                                 try {
+                                    console.log('Black frame - trying insertion');
                                     const act = sequenceEditor.createInsertProjectItemAction(
-                                        projItemBlackFrame, timeZero, 0, 0, true
+                                        projItemBlackFrame, timeZero
                                     );
                                     if (act) {
                                         actions.push(act);
                                         console.log(`✅ Queued black frame: ${projItemBlackFrame.name}`);
                                     }
                                 } catch (e) { console.error('❌ Black frame action error:', e); }
+                            } else {
+                                console.warn('⚠️ Black frame cast failed');
                             }
                         }
 
                         // Main clip
                         try {
+                            console.log('Clip - trying insertion');
                             const actClip = sequenceEditor.createInsertProjectItemAction(
-                                clipProjectItemFile, timeZero, 0, 0, true
+                                clipProjectItemFile, timeZero
                             );
                             if (actClip) {
                                 actions.push(actClip);
@@ -216,14 +223,17 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName, mogrtN
                             const projItemMogrt = ppro.ClipProjectItem.cast(mogrtObject);
                             if (projItemMogrt) {
                                 try {
+                                    console.log('MOGRT - trying insertion');
                                     const actMogrt = sequenceEditor.createInsertProjectItemAction(
-                                        projItemMogrt, timeZero, 0, 0, true
+                                        projItemMogrt, timeZero
                                     );
                                     if (actMogrt) {
                                         actions.push(actMogrt);
                                         console.log(`✅ Queued MOGRT: ${projItemMogrt.name}`);
                                     }
                                 } catch (e) { console.error('❌ MOGRT action error:', e); }
+                            } else {
+                                console.warn('⚠️ MOGRT cast failed — mogrtObject is not a ClipProjectItem');
                             }
                         }
 
