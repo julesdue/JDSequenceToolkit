@@ -495,8 +495,37 @@ document.querySelector("#btnLoadCSV").addEventListener("click", async () => {
 // Listener for download sample CSV button
 document.querySelector("#btnDownloadSampleCSV").addEventListener("click", async () => {
   console.log("Download Sample CSV button clicked");
-  document.getElementById("csvStatusText").textContent = "Sample CSV download not yet implemented";
-  // TODO: Implement sample CSV download
+  const statusEl = document.getElementById("csvStatusText");
+
+  try {
+    // @ts-ignore — localFileSystem exists in UXP runtime but is missing from type defs
+    const folder = await uxp.storage.localFileSystem.getFolder();
+    if (!folder) {
+      statusEl.textContent = "Download cancelled";
+      return;
+    }
+
+    // Get the sample CSV file from the payloads/data directory
+    // @ts-ignore
+    const pluginFolder = await uxp.storage.localFileSystem.getPluginFolder();
+    const payloadsFolder = await pluginFolder.getEntry("payloads");
+    const dataFolder = await payloadsFolder.getEntry("data");
+    const sampleFile = await dataFolder.getEntry("sample_data.csv");
+
+    // Create a new file in the selected folder with the same name
+    const newFile = await folder.createFile("sample_data.csv", { overwrite: true });
+
+    // Read the sample file and write to the new location
+    const data = await sampleFile.read();
+    await newFile.write(data);
+
+    statusEl.textContent = "Sample CSV downloaded successfully";
+    console.log("Sample CSV file downloaded to:", folder.name);
+  } catch (error) {
+    console.error("Error downloading sample CSV:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    statusEl.textContent = `Error downloading sample CSV: ${errorMessage}`;
+  }
 });
 
 

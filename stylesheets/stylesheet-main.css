@@ -290,6 +290,20 @@ my-button.tab-btn.tab-btn-last {
   margin: 0;
 }
 
+/* Filmslide buttons row with space-between layout */
+.filmslide-buttons-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.filmslide-buttons-row my-button {
+  flex-shrink: 0;
+  margin: 0;
+}
+
 /* Footer */
 footer {
   flex-shrink: 0;

@@ -161,10 +161,12 @@
           <div id="tab-filmslide" class="tab-content">
             <div class="tab-left">
               <sp-body id="plugin-body" style="position:relative;">
-                <my-button id="btnLoadCSV">Select a .csv file</my-button>
-                <my-button id="btnDownloadSampleCSV">Download sample .csv file</my-button>
+                <div class="filmslide-buttons-row">
+                  <my-button id="btnLoadCSV">Select a .csv file</my-button>
+                  <my-button id="btnDownloadSampleCSV">Download sample .csv file</my-button>
+                </div>
                 <sp-description id="csvStatusText"></sp-description>
-                <divider></divider>
+                <divider-line></divider-line>
                 
                 <sp-description id="folderStatusText" style="font-size: 12px; color: #999;">Select a folder in the project panel, then click Insert</sp-description>
                 <my-button id="btnInsertFilmslideData">Insert Filmslide Data</my-button>
@@ -172,8 +174,21 @@
             </div>
             <div class="tab-divider"></div>
             <div class="tab-right">
-              <h4>How to - Filmslide Data</h4>
-              <p>Load a CSV file with film metadata and automatically populate MOGRT parameters in sequences.</p>
+              <h4>Features</h4>
+              <p>
+                - Load a CSV file with film metadata
+                <br>
+                - Automatically populate MOGRT parameters in sequences
+                <br><br>
+              </p>
+              
+              <h4>How to</h4>
+              <p>
+                - Load a CSV file with film metadata and automatically populate MOGRT parameters in sequences.
+                <br>
+                - 
+                <br>
+              </p>
             </div>
           </div>
         </div>
