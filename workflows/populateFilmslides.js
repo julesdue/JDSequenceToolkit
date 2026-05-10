@@ -125,18 +125,39 @@ async function populateFilmslides(folderItem) {
           continue;
         }
 
+        // CRITICAL: Activate the sequence so MOGRT components initialize
+        try {
+          if (typeof project.setActiveSequence === 'function') {
+            await project.setActiveSequence(sequence);
+            console.log(`  ✅ Sequence activated: "${sequenceName}"`);
+          }
+        } catch (e) {
+          console.log(`  ⚠️ Could not activate sequence: ${e.message}`);
+        }
+
         // Find MOGRT in sequence
-        const mogrtResult = await findMogrtInSequence(sequence);
+        const mogrtResult = await findMogrtInSequence(sequence, project);
         if (!mogrtResult) {
           console.log(`⚠️  No MOGRT found in sequence "${sequenceName}"`);
           skipCount++;
           continue;
         }
 
-        const { clip, component } = mogrtResult;
+        const { clip, projectItem } = mogrtResult;
 
-        // Get MOGRT parameters
-        const params = getMogrtParams(component);
+        // Get MOGRT parameters — try component chain first, then projectItem
+        let component = mogrtResult.component;
+        if (!component && projectItem) {
+          component = projectItem;
+          console.log(`  Using projectItem as parameter source`);
+        }
+        if (!component) {
+          console.log(`⚠️  No component or projectItem for MOGRT`);
+          skipCount++;
+          continue;
+        }
+
+        const params = await getMogrtParams(component);
         if (params.length === 0) {
           console.log(`⚠️  No parameters found in MOGRT`);
           skipCount++;
@@ -176,13 +197,11 @@ async function populateFilmslides(folderItem) {
 
         // Execute all actions in a transaction if there are any
         if (actions.length > 0) {
-          await project.lockedAccess(async () => {
-            await project.executeTransaction(async (compoundAction) => {
-              for (const action of actions) {
-                compoundAction.addAction(action);
-              }
-            });
-          });
+          const compound = new ppro.CompoundAction("Update MOGRT parameters");
+          for (const action of actions) {
+            compound.addAction(action);
+          }
+          await project.executeAction(compound);
           console.log(`✅ Updated ${actions.length} parameters for sequence "${sequenceName}"`);
           successCount++;
         } else {

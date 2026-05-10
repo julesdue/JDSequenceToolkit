@@ -2,24 +2,19 @@
 const { getSelectedProjectItems } = require('../lib/getSelectedProjectItems.js');
 const { findProjectFolderByName } = require('../lib/findProjectFolderByName.js');
 const { findProjectItemsByName } = require('../lib/findProjectItemsByName.js');
-const { executeCompoundAction } = require('../lib/executeCompoundAction.js');
 const { getPresetPath } = require('../lib/getVersionAwareResources.js');
 
 // global objects
 const ppro = require("premierepro");
 const uxp = require("uxp");
 
-async function createSequencesFromFolder(sep, folderName, blackFrameName) {
-    // Log start of function
+async function createSequencesFromFolder(sep, folderName, blackFrameName, mogrtName) {
     console.log('createSequencesFromFolder called');
-    console.log(`Bin name: ${folderName}, Black frame name: ${blackFrameName}`);
+    console.log(`Bin name: ${folderName}, Black frame name: ${blackFrameName}, MOGRT name: ${mogrtName}`);
 
-
-    // Get the current project using UXP API
     const project = await ppro.Project.getActiveProject();
     console.log('Active project: ', project);
-    
-    // get project root
+
     const rootItem = await project.getRootItem();
     console.log('Root FolderItems: ', rootItem);
 
@@ -39,19 +34,27 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName) {
         blackFrameObject = await findProjectItemsByName(blackFrameName);
         console.log(`Found blackFrame object: ${blackFrameObject.name}`);
     } catch (err) {
-        console.error(`Error finding black frame "${blackFrameName.name}":`, err);
-        if (ppro.logError) {
-            ppro.logError(`Error finding black frame "${blackFrameName.name}": ${err && err.message ? err.message : err}`);
-        }
+        console.error(`Error finding black frame "${blackFrameName}":`, err);
         return;
     }
 
+    // search for the MOGRT by name
+    let mogrtObject;
+    if (mogrtName) {
+        try {
+            mogrtObject = await findProjectItemsByName(mogrtName);
+            console.log(`Found MOGRT object: ${mogrtObject.name}`);
+        } catch (err) {
+            console.warn(`Warning: MOGRT "${mogrtName}" not found:`, err);
+            mogrtObject = null;
+        }
+    }
 
-    // get children item of my folder
+    // get children of folder
     const ListOfMovieFiles = await folderObject.getItems();
     console.log(`Found ${ListOfMovieFiles.length} items in folder: ${folderName}`);
 
-    // chehck if all items are type of media
+    // filter to media items only
     const mediaItems = [];
     for (const item of ListOfMovieFiles) {
         const clipItem = ppro.ClipProjectItem.cast(item);
@@ -67,12 +70,6 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName) {
         console.log(`Media projectItem: ${item.name}`);
     });
 
-
-    //
-
-
-    // return;
-
     // Loop to create sequences
     let createdCount = 0;
     for (let i = 0; i < mediaItems.length; i++) {
@@ -80,16 +77,12 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName) {
         if (projItemFile && !projItemFile.name.endsWith('_dnx')) {
             console.log(`Processing file: ${projItemFile.name}`);
 
-            
-            // get footage interprator of current project item
+            // get footage interpretation
             const FootageInterpretor = await projItemFile.getFootageInterpretation();
             const fps = FootageInterpretor.getFrameRate();
             console.log(`Clip: ${projItemFile.name} | FPS: ${fps}`);
 
-
-            
-
-            // Match preset filenames
+            // match preset filename
             let fpsPreset;
             const fpsNum = parseFloat(fps);
             if (fpsNum >= 23 && fpsNum < 24) {
@@ -106,7 +99,7 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName) {
                 fpsPreset = fpsNum.toString().replace(/[,\.]/g, '');
             }
 
-            // Load preset path from version-aware resource handler
+            // load preset path
             const presetFileName = `KiPro_FHD_8Ch_${fpsPreset}fps.sqpreset`;
             const presetPath = await getPresetPath(presetFileName);
             if (!presetPath) {
@@ -115,106 +108,144 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName) {
             }
             console.log(`Using preset: ${presetPath}`);
 
-
-            // cleanup sequence name
+            // build sequence name
             const seqName = projItemFile.name.replace(/\.[^.]+$/, '_dnx');
             console.log(`Attempting to create sequence: ${seqName}`);
 
-            // Check if sequence already exists
+            // check if sequence already exists
             const sequences = await project.getSequences();
             if (sequences.some(seq => seq.name === seqName)) {
                 console.log(`Sequence already exists in project: ${seqName}, skipping.`);
                 continue;
             }
 
-            // Create the sequence with the specified preset
-            // should be createSequenceWithPresetPath() because createSequence() is deprecated, but createSequenceWithPresetPath() doesn't work
-            const newSeq = await project.createSequence(seqName, presetPath);
-            // const newSeq = await project.createSequenceWithPresetPath(seqName, presetPath);            
-            console.log(`Created sequence: ${newSeq.name} with preset: ${presetPath}`);
+            // create the sequence
+            await project.createSequence(seqName, presetPath);
+            console.log(`Created sequence: ${seqName} with preset: ${presetPath}`);
 
-            // move newly created sequence to the bin
-            // get project item of the new sequence
-            const NewSeqProjectItem = await newSeq.getProjectItem();
-            // create action to execute
-            const actionMoveNewSeq = await rootItem.createMoveItemAction(NewSeqProjectItem, folderObject);
-            executeCompoundAction(project, actionMoveNewSeq);
-            console.log(`Moved sequence: ${NewSeqProjectItem.name} to bin: ${folderObject.name}`);
-
-            // get the sequence editor
-            const sequenceEditor = ppro.SequenceEditor.getEditor(newSeq);
-            console.log('Sequence editor acquired: ', sequenceEditor);
-
-            // Insert the clip into the sequence
-            const offset = await ppro.TickTime.createWithSeconds(7);
-            const clipProjectItemFile = ppro.ClipProjectItem.cast(projItemFile); // ensure correct type
-            if (!clipProjectItemFile) {
-                console.error(`Failed to cast project item to ClipProjectItem: ${projItemFile.name}`);
+            // re-fetch sequence by name immediately (returned object goes stale)
+            const allSequences = await project.getSequences();
+            const newSeq = allSequences.find(seq => seq.name === seqName);
+            if (!newSeq) {
+                console.error(`❌ Failed to re-fetch sequence after creation: ${seqName}`);
                 continue;
             }
 
+            // move sequence to bin
+            try {
+                // re-fetch folder fresh (original goes stale after createSequence)
+                const freshFolder = await findProjectFolderByName(folderName);
+                console.log('freshFolder:', freshFolder);
+                console.log('freshFolder.name:', freshFolder?.name);
 
-            // start action to insert clip
-            // const actionInsertClip = await sequenceEditor.createInsertProjectItemAction(projItemFile, offset, 0, 0, true);
-            // executeCompoundAction(project, actionInsertClip);
-            // console.log(`Inserted clip: ${projItemFile.name} at offset: ${offset} seconds`);
+                const freshFolderItem = ppro.FolderItem.cast(freshFolder);
+                console.log('freshFolderItem after cast:', freshFolderItem);
 
-            // const clipProjectItem = ppro.ClipProjectItem.cast(projItemFile);
-            // if (!clipProjectItem) {
-            //     console.error('Not a ClipProjectItem:', projItemFile);
-            //     continue;
-            // }
-
-            // Insert the clip into the sequence at the start
-            await project.lockedAccess(async () => {
-                await project.executeTransaction(async (compoundAction) => {
-                    const actInsertProjItem = await sequenceEditor.createInsertProjectItemAction(
-                        clipProjectItemFile,
-                        offset, // Insert with 
-                        0, // Video track index
-                        0, // Audio track index
-                        true // Overwrite
-                    );
-                    compoundAction.addAction(actInsertProjItem);
-                });
-            });
-            console.log(`Inserted clip: ${clipProjectItemFile.name} at offset: 0 seconds`);
-
-
-            // Insert the black frame into the sequence at the start
-            const projItemBlackFrame = ppro.ClipProjectItem.cast(blackFrameObject);
-            if (projItemBlackFrame) {
-                await project.lockedAccess(async () => {
-                    await project.executeTransaction(async (compoundAction) => {
-                        const actInsertBlackFrame = await sequenceEditor.createInsertProjectItemAction(
-                            projItemBlackFrame,
-                            0, // Insert at start
-                            0, // Video track index
-                            0, // Audio track index
-                            true // Overwrite
-                        );
-                        compoundAction.addAction(actInsertBlackFrame);
+                if (!freshFolderItem) {
+                    console.error('❌ FolderItem cast failed — freshFolder is not a FolderItem');
+                } else {
+                    let moveAction;
+                    await project.lockedAccess(() => {
+                        const seqProjItem = newSeq.getProjectItem(); // NO await
+                        moveAction = rootItem.createMoveItemAction(seqProjItem, freshFolderItem);
                     });
-                });
-                console.log(`Inserted black frame: ${projItemBlackFrame.name} at offset: 0 seconds`);
-            } else {
-                console.warn('Black frame project item could not be cast.');
-            }
-            
-            
-            // await newSeq.videoTracks[0].insertClip(projItemFile, offset);
-            // console.log(`${projItemFile.name} added to sequence: ${newSeq.name}`);
 
-            return;
-            // Add the black frame at the start if it exists
-            if (projItemBlackFrame) {
-                await newSeq.videoTracks[0].insertClip(projItemBlackFrame, 0);
-                console.log(`Black frame added to sequence: ${newSeq.name}`);
+                    if (moveAction) {
+                        await project.executeAction(moveAction);
+                        console.log(`✅ Moved sequence to bin: ${folderName}`);
+                    }
+                }
+            } catch (moveError) {
+                console.warn(`⚠️ Could not move sequence to bin: ${moveError}. Sequence created but not moved.`);
             }
 
-            // Move the sequence to the bin
-            await newSeq.moveToBin(bin);
-            console.log(`Moved sequence: ${newSeq.name} to bin: ${bin.name}`);
+            // cast clip to ClipProjectItem
+            const clipProjectItemFile = ppro.ClipProjectItem.cast(projItemFile);
+            if (!clipProjectItemFile) {
+                console.error(`❌ Failed to cast project item to ClipProjectItem: ${projItemFile.name}`);
+                continue;
+            }
+
+            // insert clips into sequence
+            try {
+                const videoTrackCount = await newSeq.getVideoTrackCount();
+                console.log(`Video track count: ${videoTrackCount}`);
+
+                if (videoTrackCount > 0) {
+
+                    // ✅ Pre-resolve TickTime BEFORE lockedAccess (it's async, can't await inside sync callback)
+                    const timeZero = await ppro.TickTime.createWithSeconds(0);
+
+                    // ✅ Build actions synchronously inside lockedAccess — NO async, NO await inside
+                    let builtActions = [];
+
+                    await project.lockedAccess(() => {
+                        const sequenceEditor = ppro.SequenceEditor.getEditor(newSeq);
+                        const actions = [];
+                        console.log('Sequence editor acquired inside locked access');
+
+                        // Black frame
+                        if (blackFrameName) {
+                            const projItemBlackFrame = ppro.ClipProjectItem.cast(blackFrameObject);
+                            if (projItemBlackFrame) {
+                                try {
+                                    const act = sequenceEditor.createInsertProjectItemAction(
+                                        projItemBlackFrame, timeZero, 0, 0, true
+                                    );
+                                    if (act) {
+                                        actions.push(act);
+                                        console.log(`✅ Queued black frame: ${projItemBlackFrame.name}`);
+                                    }
+                                } catch (e) { console.error('❌ Black frame action error:', e); }
+                            }
+                        }
+
+                        // Main clip
+                        try {
+                            const actClip = sequenceEditor.createInsertProjectItemAction(
+                                clipProjectItemFile, timeZero, 0, 0, true
+                            );
+                            if (actClip) {
+                                actions.push(actClip);
+                                console.log(`✅ Queued clip: ${clipProjectItemFile.name}`);
+                            }
+                        } catch (e) { console.error('❌ Clip action error:', e); }
+
+                        // MOGRT
+                        if (mogrtObject && mogrtName) {
+                            const projItemMogrt = ppro.ClipProjectItem.cast(mogrtObject);
+                            if (projItemMogrt) {
+                                try {
+                                    const actMogrt = sequenceEditor.createInsertProjectItemAction(
+                                        projItemMogrt, timeZero, 0, 0, true
+                                    );
+                                    if (actMogrt) {
+                                        actions.push(actMogrt);
+                                        console.log(`✅ Queued MOGRT: ${projItemMogrt.name}`);
+                                    }
+                                } catch (e) { console.error('❌ MOGRT action error:', e); }
+                            }
+                        }
+
+                        builtActions = actions;
+                    });
+
+                    // ✅ Execute all actions OUTSIDE lockedAccess
+                    if (builtActions.length > 0) {
+                        const compound = new ppro.CompoundAction("Insert clips");
+                        builtActions.forEach(act => compound.addAction(act));
+                        await project.executeAction(compound);
+                        console.log(`✅ Executed ${builtActions.length} clip insertion(s) into: ${seqName}`);
+                    } else {
+                        console.warn('⚠️ No actions were built — nothing inserted into sequence');
+                    }
+
+                } else {
+                    console.error(`❌ Sequence has no video tracks`);
+                }
+            } catch (generalError) {
+                console.error(`❌ Error in clip insertion: ${generalError}`);
+            }
 
             createdCount++;
             console.log('Finished processing file: ' + projItemFile.name);

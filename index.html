@@ -6,82 +6,131 @@
   </head>
   <body>
 
+    <!-- Content Wrapper: Left and Right Columns -->
+    <div id="content-wrapper">
+      <!-- Left Column: Tabs and Content -->
+      <div id="left-column">
+        <!-- Tab Navigation -->
+        <div id="tab-container">
+          <div id="tab-nav">
+            <button class="tab-btn active" data-tab="tab-sequences">Sequence Creation</button>
+            <button class="tab-btn" data-tab="tab-clip-extractor">Bulk Clip Extractor</button>
+            <button class="tab-btn" data-tab="tab-export-selection">Export Selection</button>
+            <button class="tab-btn" data-tab="tab-filmslide">Filmslide Data</button>
+          </div>
+        </div>
 
-    
-    <sp-body id="plugin-body" style="position:relative;">
-      <a href="https://github.com/julesdue/kipromanager" target="_blank" class="info-icon-link" title="More info">
-        <span class="info-icon">i</span>
-      </a>
-      <h3>[WIP] Sequence Creation & Exporting</h3>
-      <h6>Name of bin to create sequences</h6>
-      <input type="text" id="input-bin-name" placeholder="Enter bin name" value="test" />
-      
-      <h6>Name of black frame at beginning</h6>
-      <input type="text" id="input-black-frame-name" placeholder="Enter black_frame name" value="schwarz_frame" />
-      
-      <h6>Export base path</h6>
-      <input type="text" id="input-export-base-path" placeholder="Enter export base path" value="C:\Users\julia\Desktop\temp" />
+        <!-- Tab Content Wrapper -->
+        <div id="tab-content-wrapper">
+          <!-- Tab Content: Sequence Creation & Exporting -->
+          <div id="tab-sequences" class="tab-content active">
+            <div class="tab-left">
+              <sp-body id="plugin-body" style="position:relative;">
+                <h5>Name of bin to create sequences</h5>
+                <input type="text" id="input-bin-name" placeholder="Enter bin name" value="test" />
+                <divider-line></divider-line>
+
+                <sp-checkbox id="insertBlackFrame" checked>Insert black frame at beginning</sp-checkbox>
+                <h5>Name of black frame at beginning</h5>
+                <input type="text" id="input-black-frame-name" placeholder="Enter black_frame name" value="schwarz_frame" />
+                <divider-line></divider-line>
+
+                <sp-checkbox id="insertMogrt" checked>Insert Filmslide .mogrt</sp-checkbox>
+                <h5>Filmslide .mogrt file name</h5>
+                <input type="text" id="input-mogrt-name" placeholder="Enter mogrt name" value="ALPINALE_filmvorspannslides" />
+                <divider-line></divider-line>
+
+                <run-button id="btnCreateSequences">Create Sequences from Film Files</run-button>
+                <divider></divider>
+                <divider-line></divider-line>
 
 
-      <sp-button id="btnCreateSequences">Create Sequences</sp-button>
-      <sp-button id="btnExportSequences">Export Sequences to ME</sp-button>
-      
+                <h5>Export base path</h5>
+                <input type="text" id="input-export-base-path" placeholder="Enter export base path" value="C:\Users\julia\Desktop\temp" />
+                <divider></divider>
 
-    </sp-body>
+                <run-button id="btnExportSequences">Export Sequences to ME</run-button>
+              </sp-body>
+            </div>
+            <div class="tab-divider"></div>
+            <div class="tab-right">
+              <h4>How to - Sequence Creation</h4>
+              <p>Create sequences from folder structure with automatic clip insertion and black frame handling.</p>
+            </div>
+          </div>
 
-    
-    <sp-body id="plugin-body" style="position:relative;">
-      <a href="https://github.com/julesdue/kipromanager" target="_blank" class="info-icon-link" title="More info">
-        <span class="info-icon">i</span>
-      </a>
-      <h3>[WIP] Clip Extractor</h3>
-      <h6>Video Track Name</h6>
-      <input type="text" id="input-clip-extract-video-track" placeholder="Enter video track name" value="Video 1" /> 
-      <h6>Path to extract clips</h6>
-      <input type="text" id="input-clip-extract-basepath" placeholder="Enter clip extract path" value="C:\Users\julia\Desktop\temp" />
-      <sp-description>Extract each single clip from the active sequence of a specified track. Using a medium h264 preset. It looks at cut in between.</sp-description>
-      <br/>
-      <sp-button id="btnExtractClips">Extract Clips</sp-button>
-    </sp-body>
+          <!-- Tab Content: Bulk Clip Extractor -->
+          <div id="tab-clip-extractor" class="tab-content">
+            <div class="tab-left">
+              <sp-body id="plugin-body" style="position:relative;">
+                <h5>Video Track Name</h5>
+                <input type="text" id="input-clip-extract-video-track" placeholder="Enter video track name" value="Video 1" />
+                <divider></divider>
 
-    
-    <sp-body id="plugin-body" style="position:relative;">
-      <a href="https://github.com/julesdue/kipromanager" target="_blank" class="info-icon-link" title="More info">
-        <span class="info-icon">i</span>
-      </a>
-      <h3>Export Sequence Selection with In/Out-Points</h3>
-      <h6>Video Track Name</h6>
-      <input type="text" id="input-export-selection-video-track" placeholder="Enter video track name" value="Video 1" />
-      <h6>Base path to extract clips</h6>
-      <input type="text" id="input-export-selection-basepath" placeholder="Enter in/out extract path" value="C:\Users\julia\Desktop\temp" />
+                <h5>Path to extract clips</h5>
+                <input type="text" id="input-clip-extract-basepath" placeholder="Enter clip extract path" value="C:\Users\julia\Desktop\temp" />
+                <divider></divider>
 
-      <sp-description>Extract the selected In/Out range from the active sequence. Uses medium h264 preset. Uses the clip name as export name.</sp-description>
-      <br/>
-      <sp-button id="btnExportSequenceSelection">Export Selection</sp-button>
-    </sp-body>
+                <run-button id="btnExtractClips">Bulk extract Clips</run-button>
+              </sp-body>
+            </div>
+            <div class="tab-divider"></div>
+            <div class="tab-right">
+              <h4>How to</h4>
+              <p>Extract each single clip from the active sequence of a specified track. Using a medium h264 preset. It looks at cut in between.</p>
+            </div>
+          </div>
 
-    <sp-body id="plugin-body" style="position:relative;">
-      <a href="https://github.com/julesdue/kipromanager" target="_blank" class="info-icon-link" title="More info">
-        <span class="info-icon">i</span>
-      </a>
-      <h3>Filmslide Data Insert</h3>
-      <sp-description>Load a CSV file with film metadata and automatically populate MOGRT parameters in sequences.</sp-description>
-      <br/>
-      <sp-button id="btnLoadCSV">Load CSV</sp-button>
-      <sp-button id="btnDownloadSampleCSV">Download sample CSV file</sp-button>
-      <sp-description id="csvStatusText"></sp-description>
-      <br/>
-      <sp-description id="folderStatusText" style="font-size: 12px; color: #999;">Select a folder in the project panel, then click Insert</sp-description>
-      <sp-button id="btnInsertFilmslideData">Insert Filmslide Data</sp-button>
-    </sp-body>
-    
-    <br/>
-    <br/>
+          <!-- Tab Content: Export Selection -->
+          <div id="tab-export-selection" class="tab-content">
+            <div class="tab-left">
+              <sp-body id="plugin-body" style="position:relative;">
+                <h5>Video Track Name</h5>
+                <input type="text" id="input-export-selection-video-track" placeholder="Enter video track name" value="Video 1" />
+                <divider></divider>
+                
+                <h5>Base path to extract clips</h5>
+                <input type="text" id="input-export-selection-basepath" placeholder="Enter in/out extract path" value="C:\Users\julia\Desktop\temp" />
+                <divider></divider>
+
+                <run-button id="btnExportSequenceSelection">Export Selection</run-button>
+              </sp-body>
+            </div>
+            <div class="tab-divider"></div>
+            <div class="tab-right">
+              <h4>How to</h4>
+              <p>Extract the selected In/Out range from the active sequence. Uses medium h264 preset. Uses the clip name as export name.</p>
+            </div>
+          </div>
+
+          <!-- Tab Content: Filmslide Data -->
+          <div id="tab-filmslide" class="tab-content">
+            <div class="tab-left">
+              <sp-body id="plugin-body" style="position:relative;">
+                <run-button id="btnLoadCSV">Select a .csv file</run-button>
+                <run-button id="btnDownloadSampleCSV">Download sample .csv file</run-button>
+                <sp-description id="csvStatusText"></sp-description>
+                <divider></divider>
+                
+                <sp-description id="folderStatusText" style="font-size: 12px; color: #999;">Select a folder in the project panel, then click Insert</sp-description>
+                <run-button id="btnInsertFilmslideData">Insert Filmslide Data</run-button>
+              </sp-body>
+            </div>
+            <div class="tab-divider"></div>
+            <div class="tab-right">
+              <h4>How to - Filmslide Data</h4>
+              <p>Load a CSV file with film metadata and automatically populate MOGRT parameters in sequences.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Removed (info now inside tabs) -->
+    </div>
 
     <footer>
       <p>KiPro Manager Extension ver1.0.0</p>
     </footer>
-
 
   </body>
 </html>

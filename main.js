@@ -7,6 +7,161 @@ const path = require('path');
 console.log("KiPro Manager plugin loaded");
 console.log(ppro);
 
+// === Theme Support ===
+function applyTheme(theme) {
+  document.body.classList.remove("theme-light", "theme-dark", "theme-darkest");
+
+  if (theme && theme.includes("dark")) {
+    document.body.classList.add(theme === "darkest" ? "theme-darkest" : "theme-dark");
+  } else {
+    document.body.classList.add("theme-light");
+  }
+
+  console.log(`Theme applied: ${theme}`);
+}
+
+// Apply theme on load
+if (document.theme && document.theme.getCurrent) {
+  try {
+    const currentTheme = document.theme.getCurrent();
+    applyTheme(currentTheme);
+
+    // Listen for theme changes
+    if (document.theme.onUpdated && document.theme.onUpdated.addListener) {
+      document.theme.onUpdated.addListener(applyTheme);
+    }
+  } catch (e) {
+    console.log("Theme API not available, using default dark theme");
+    document.body.classList.add("theme-dark");
+  }
+} else {
+  console.log("Theme API not available, using default dark theme");
+  document.body.classList.add("theme-dark");
+}
+
+// === Tab Navigation ===
+function setupTabs() {
+  const tabButtons = document.querySelectorAll(".tab-btn");
+  const tabContents = document.querySelectorAll(".tab-content");
+  const infoSections = document.querySelectorAll(".info-section");
+
+  tabButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const targetTab = button.getAttribute("data-tab");
+      const targetInfo = targetTab.replace("tab-", "info-");
+
+      // Remove active class from all buttons, contents, and info sections
+      tabButtons.forEach((btn) => btn.classList.remove("active"));
+      tabContents.forEach((content) => content.classList.remove("active"));
+      infoSections.forEach((section) => section.classList.remove("active"));
+
+      // Add active class to clicked button, target content, and target info
+      button.classList.add("active");
+      document.getElementById(targetTab).classList.add("active");
+      document.getElementById(targetInfo).classList.add("active");
+
+      console.log(`Tab switched to: ${targetTab}, Info: ${targetInfo}`);
+    });
+  });
+}
+
+// Initialize tabs when DOM is ready
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", setupTabs);
+} else {
+  setupTabs();
+}
+
+// === Resizable Divider ===
+function setupResizableDivider() {
+  const dividers = document.querySelectorAll(".tab-divider");
+
+  dividers.forEach((divider) => {
+    let isResizing = false;
+    let startX = 0;
+    let startLeftWidth = 0;
+
+    divider.addEventListener("mousedown", (e) => {
+      isResizing = true;
+      startX = e.clientX;
+      const tabContent = divider.closest(".tab-content");
+      const tabLeft = tabContent.querySelector(".tab-left");
+      startLeftWidth = tabLeft.offsetWidth;
+
+      divider.classList.add("dragging");
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+    });
+
+    document.addEventListener("mousemove", (e) => {
+      if (!isResizing) return;
+
+      const tabContent = divider.closest(".tab-content");
+      const tabLeft = tabContent.querySelector(".tab-left");
+      const tabRight = tabContent.querySelector(".tab-right");
+
+      const delta = e.clientX - startX;
+      const newLeftWidth = startLeftWidth + delta;
+      const minWidth = 200;
+      const maxWidth = tabContent.offsetWidth - 200;
+
+      if (newLeftWidth > minWidth && newLeftWidth < maxWidth) {
+        tabLeft.style.flex = `0 0 ${newLeftWidth}px`;
+        tabRight.style.width = `${tabContent.offsetWidth - newLeftWidth - 4}px`;
+      }
+    });
+
+    document.addEventListener("mouseup", () => {
+      if (isResizing) {
+        isResizing = false;
+        divider.classList.remove("dragging");
+        document.body.style.cursor = "default";
+        document.body.style.userSelect = "auto";
+      }
+    });
+  });
+}
+
+// Initialize resizable dividers when DOM is ready
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", setupResizableDivider);
+} else {
+  setupResizableDivider();
+}
+
+// === Checkbox Controls ===
+function setupCheckboxControls() {
+  const insertBlackFrameCheckbox = document.getElementById("insertBlackFrame");
+  const blackFrameNameInput = document.getElementById("input-black-frame-name");
+
+  const insertMogrtCheckbox = document.getElementById("insertMogrt");
+  const mogrtNameInput = document.getElementById("input-mogrt-name");
+
+  // Black frame checkbox
+  if (insertBlackFrameCheckbox && blackFrameNameInput) {
+    blackFrameNameInput.disabled = !insertBlackFrameCheckbox.checked;
+    insertBlackFrameCheckbox.addEventListener("change", () => {
+      blackFrameNameInput.disabled = !insertBlackFrameCheckbox.checked;
+      console.log(`Black frame insertion: ${insertBlackFrameCheckbox.checked ? "enabled" : "disabled"}`);
+    });
+  }
+
+  // MOGRT checkbox
+  if (insertMogrtCheckbox && mogrtNameInput) {
+    mogrtNameInput.disabled = !insertMogrtCheckbox.checked;
+    insertMogrtCheckbox.addEventListener("change", () => {
+      mogrtNameInput.disabled = !insertMogrtCheckbox.checked;
+      console.log(`MOGRT insertion: ${insertMogrtCheckbox.checked ? "enabled" : "disabled"}`);
+    });
+  }
+}
+
+// Initialize checkbox controls when DOM is ready
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", setupCheckboxControls);
+} else {
+  setupCheckboxControls();
+}
 
 // UXP scripts and API as CommonJS modules
 const { createSequencesFromFolder } = require("./workflows/createSequencesFromFolder.js");
@@ -39,15 +194,31 @@ document.querySelector("#btnCreateSequences").addEventListener("click", async ()
   // Get input values from the UI
   const folderName = document.getElementById("input-bin-name").value;
   console.log(`Folder name: ${folderName}`);
-  const blackFrameName = document.getElementById("input-black-frame-name").value;
-  console.log(`Black frame name: ${blackFrameName}`);
-  
-  // Resolve payloads path
-  // console.log(`Payloads path resolved to: ${payloadsPath}`);
 
-  console.log(`Creating sequences for bin: ${folderName}`);
+  // Check if black frame insertion is enabled
+  const insertBlackFrameCheckbox = document.getElementById("insertBlackFrame");
+  const insertBlackFrame = insertBlackFrameCheckbox?.checked || false;
+  let blackFrameName = "";
+  if (insertBlackFrame) {
+    blackFrameName = document.getElementById("input-black-frame-name").value;
+    console.log(`Black frame name: ${blackFrameName}`);
+  } else {
+    console.log("Black frame insertion disabled");
+  }
+
+  // Check if MOGRT insertion is enabled
+  const insertMogrtCheckbox = document.getElementById("insertMogrt");
+  const insertMogrt = insertMogrtCheckbox?.checked || false;
+  let mogrtName = "";
+  if (insertMogrt) {
+    mogrtName = document.getElementById("input-mogrt-name").value;
+    console.log(`MOGRT name: ${mogrtName}`);
+  } else {
+    console.log("MOGRT insertion disabled");
+  }
+
   try {
-    await createSequencesFromFolder(sep, folderName, blackFrameName);
+    await createSequencesFromFolder(sep, folderName, insertBlackFrame ? blackFrameName : "", insertMogrt ? mogrtName : "");
     console.log(`Done creating sequences for bin: ${folderName}`);
   } catch (error) {
     console.error(`Error creating sequences for bin: ${folderName}`, error);
