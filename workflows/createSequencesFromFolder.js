@@ -265,3 +265,4 @@ async function createSequencesFromFolder(sep, folderName, blackFrameName, mogrtN
 }
 
 module.exports = { createSequencesFromFolder };
+
