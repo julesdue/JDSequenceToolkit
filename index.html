@@ -13,10 +13,10 @@
         <!-- Tab Navigation -->
         <div id="tab-container">
           <div id="tab-nav">
-            <button class="tab-btn active" data-tab="tab-sequences">Sequence Creation</button>
-            <button class="tab-btn" data-tab="tab-clip-extractor">Bulk Clip Extractor</button>
-            <button class="tab-btn" data-tab="tab-export-selection">Export Selection</button>
-            <button class="tab-btn" data-tab="tab-filmslide">Filmslide Data</button>
+            <run-button class="tab-btn active" data-tab="tab-sequences">Sequence Creation</button>
+            <run-button class="tab-btn" data-tab="tab-clip-extractor">Bulk Clip Extractor</button>
+            <run-button class="tab-btn" data-tab="tab-export-selection">Export Selection</button>
+            <run-button class="tab-btn" data-tab="tab-filmslide">Filmslide Data</button>
           </div>
         </div>
 
@@ -54,8 +54,14 @@
             </div>
             <div class="tab-divider"></div>
             <div class="tab-right">
-              <h4>How to - Sequence Creation</h4>
-              <p>Create sequences from folder structure with automatic clip insertion and black frame handling.</p>
+              <h4>How to</h4>
+              <p>Create sequences from folder structure with automatic clip insertion and black frame handling.
+                <br><br>
+                The script looks for film files in the project panel and creates sequences based on the folder structure.
+                <br><br>
+                Already existing sequecnes with the same name will be skipped.
+
+              </p>
             </div>
           </div>
 
