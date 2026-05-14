@@ -25,30 +25,19 @@ A more detailed breakdown of the project structure can be found in [docs/project
 
 ## Core Concepts
 
-### Action Pattern (v26+)
+### Action Pattern
 
-For modifying project state, the toolkit uses the `executeTransaction` pattern within a `lockedAccess` block. This ensures that all changes are grouped into a single undoable action in Premiere Pro.
-
-```javascript
-const project = await ppro.Project.getActiveProject();
-
-await project.lockedAccess(async () => {
-  project.executeTransaction((compoundAction) => {
-    const action = param.createSetValueAction(kfEntry);
-    compoundAction.addAction(action);
-  });
-});
-```
+For modifying project state, the toolkit uses a specific pattern to ensure that all changes are grouped into a single undoable action in Premiere Pro. This provides a better user experience by making it easy to revert any changes made by the plugin.
 
 ### MOGRT Parameter Modification
 
-The toolkit can modify parameters of Motion Graphics Templates (MOGRTs). It traverses the component chain of a clip to find the desired parameter and then uses the action pattern to update its value.
+The toolkit can modify parameters of Motion Graphics Templates (MOGRTs). It traverses the component chain of a clip to find the desired parameter and then updates its value. This is useful for batch-updating titles, graphics, and other template-based elements.
 
 **Note:** There is a known issue with modifying text parameters in some versions of Premiere Pro. See [docs/mogrt-text-param-mutation-blocking-issue.md](docs/mogrt-text-param-mutation-blocking-issue.md) for more details.
 
 ### Version-Aware Resource Loading
 
-The plugin can detect the version of Premiere Pro it is running on and load the appropriate resources (like export presets) from the `payloads/` directory.
+The plugin can detect the version of Premiere Pro it is running on and load the appropriate resources (like export presets) from the `payloads/` directory. This ensures compatibility across different versions of Premiere Pro.
 
 ## API Reference
 
