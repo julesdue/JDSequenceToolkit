@@ -1,4 +1,4 @@
-# JDSequenceToolkit
+# UXP Adobe Premiere Pro Addon: JDSequenceToolkit
 
 JDSequenceToolkit is a UXP-based Adobe Premiere Pro plugin for professional sequence and clip management. It provides a suite of tools to automate repetitive tasks, streamline workflows, and enhance productivity within Premiere Pro.
 
