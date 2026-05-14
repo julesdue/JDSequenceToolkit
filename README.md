@@ -4,17 +4,19 @@ JDSequenceToolkit is a UXP-based Adobe Premiere Pro plugin for professional sequ
 
 This toolkit is built with vanilla JavaScript and UXP, ensuring a lightweight footprint and direct access to the Premiere Pro API.
 
-## How to use it
-
-1.  **Installation**: Download the latest release from the [releases page](https://github.com/julesdue/JDSequenceToolkit/releases) and place the plugin folder in the UXP extensions folder for Premiere Pro.
-2.  **Access**: Open the plugin from the `Extensions` menu in Premiere Pro.
-
-## Features
+## Main Features
 
 - **Automated Sequence Creation**: Generate sequences automatically from the contents of a project bin.
 - **Bulk Clip & Sequence Export**: Export multiple clips or sequences to Adobe Media Encoder with specified presets.
 - **MOGRT Data Population**: Populate Motion Graphics Templates (MOGRTs) with data from a CSV file.
 - **Advanced Clip Manipulation**: Perform complex clip operations and manipulations with precision.
+
+## How to use it
+
+1.  Download the latest release from the [releases page](https://github.com/julesdue/JDSequenceToolkit/releases).
+2.  Double click the "jdsequencetoolkit_premierepro.ccx" file, which opens Adobe Creative Cloud, just follow the instructions.
+    OR place the file into the coresponding folders of PremierePro.
+3.  Open the plugin from the `Extensions` menu in Premiere Pro.
 
 ## Project Structure
 
@@ -27,22 +29,6 @@ The project is organized into several key directories:
 - **`stylesheets/`**: CSS for styling the plugin's user interface.
 
 A more detailed breakdown of the project structure can be found in [docs/project-structure.md](docs/project-structure.md).
-
-## Core Concepts
-
-### Action Pattern
-
-For modifying project state, the toolkit uses a specific pattern to ensure that all changes are grouped into a single undoable action in Premiere Pro. This provides a better user experience by making it easy to revert any changes made by the plugin.
-
-### MOGRT Parameter Modification
-
-The toolkit can modify parameters of Motion Graphics Templates (MOGRTs). It traverses the component chain of a clip to find the desired parameter and then updates its value. This is useful for batch-updating titles, graphics, and other template-based elements.
-
-**Note:** There is a known issue with modifying text parameters in some versions of Premiere Pro. See [docs/mogrt-text-param-mutation-blocking-issue.md](docs/mogrt-text-param-mutation-blocking-issue.md) for more details.
-
-### Version-Aware Resource Loading
-
-The plugin can detect the version of Premiere Pro it is running on and load the appropriate resources (like export presets) from the `payloads/` directory. This ensures compatibility across different versions of Premiere Pro.
 
 ## API Reference
 
