@@ -4,6 +4,11 @@ JDSequenceToolkit is a UXP-based Adobe Premiere Pro plugin for professional sequ
 
 This toolkit is built with vanilla JavaScript and UXP, ensuring a lightweight footprint and direct access to the Premiere Pro API.
 
+## How to use it
+
+1.  **Installation**: Download the latest release from the [releases page](https://github.com/julesdue/JDSequenceToolkit/releases) and place the plugin folder in the UXP extensions folder for Premiere Pro.
+2.  **Access**: Open the plugin from the `Extensions` menu in Premiere Pro.
+
 ## Features
 
 - **Automated Sequence Creation**: Generate sequences automatically from the contents of a project bin.
@@ -41,22 +46,7 @@ The plugin can detect the version of Premiere Pro it is running on and load the 
 
 ## API Reference
 
-The plugin extensively uses the Premiere Pro UXP API. A compact reference of the most commonly used classes and methods is available in [docs/doc_classes.md](docs/doc_classes.md).
-
-For a quick reference on MOGRT manipulation, see [docs/mogrt_uxp_quick_reference_compact.md](docs/mogrt_uxp_quick_reference_compact.md).
-
-## Styling
-
-The user interface is styled to match the look and feel of Adobe Premiere Pro, with support for different themes (Light, Dark, Darkest). The styling guide can be found in [docs/styling-guide.md](docs/styling-guide.md).
-
-## Getting Started
-
-1.  **Installation**: Place the plugin folder in the UXP extensions folder for Premiere Pro.
-2.  **Access**: Open the plugin from the `Extensions` menu in Premiere Pro.
-
-## Contributing
-
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+The plugin extensively uses the Premiere Pro UXP API. For a detailed reference, please see the [official Adobe Premiere Pro UXP API documentation](https://developer.adobe.com/premiere-pro/uxp/ppro-reference/).
 
 ## License
 
