@@ -3,10 +3,38 @@ const os = require('os');
 const ppro = require("premierepro");
 const path = require('path');
 const { getEnvironmentInfo } = require("./lib/getVersionAwareResources.js");
-
+const { canUseExecuteScript } = require("./lib/canUseExecuteScript.js");
 
 console.log("KiPro Manager plugin loaded");
 console.log(ppro);
+
+// === Debug: Test ExecuteScript capability at startup ===
+(async () => {
+  const canUseJsx = await canUseExecuteScript();
+  if (canUseJsx) {
+    console.log("✅ DEBUG: ExtendScript executeScript bridge IS AVAILABLE — JSX path will be used for MOGRT mutations");
+  } else {
+    console.log("⚠️  DEBUG: ExtendScript executeScript bridge NOT AVAILABLE — UXP fallback path will be used for MOGRT mutations");
+  }
+
+  // Dump all exported classes/functions from ppro module
+  console.log("🔬 ppro module exports:");
+  try {
+    const keys = Object.keys(ppro).sort();
+    console.log(`   Total exports: ${keys.length}`);
+    console.log(`   Keys: ${keys.join(', ')}`);
+    // Look for MOGRT/MGT/Text-related classes
+    const mogrtKeys = keys.filter(k => /mogrt|mgt|mogr|graphic|motion|text/i.test(k));
+    if (mogrtKeys.length) {
+      console.log(`   🎯 MOGRT-related exports: ${mogrtKeys.join(', ')}`);
+      for (const k of mogrtKeys) {
+        console.log(`      ${k}: ${typeof ppro[k]}`);
+      }
+    }
+  } catch (e) {
+    console.log("   Error dumping ppro keys:", e.message);
+  }
+})();
 
 // === Theme Support ===
 function applyTheme(theme) {
@@ -532,9 +560,8 @@ document.querySelector("#btnDownloadSampleCSV").addEventListener("click", async 
 // Listener for insert filmslide data button
 document.querySelector("#btnInsertFilmslideData").addEventListener("click", async () => {
   console.log("Insert Filmslide Data button clicked");
-  const statusEl = document.getElementById("csvStatusText");
+  const statusEl = document.getElementById("filmslideStatusText");
   const folderStatusEl = document.getElementById("folderStatusText");
-  const filmslideStatusEl = document.getElementById("filmslideStatusText");
 
   try {
     // Get selected folder from project panel
@@ -545,7 +572,8 @@ document.querySelector("#btnInsertFilmslideData").addEventListener("click", asyn
 
     if (!selection || selection.length === 0) {
       console.log("No folder selected in project panel");
-      folderStatusEl.textContent = "❌ No folder selected";
+      if (folderStatusEl) folderStatusEl.textContent = "❌ No folder selected";
+      if (statusEl) statusEl.textContent = "❌ No folder selected";
       return;
     }
 
@@ -570,7 +598,8 @@ document.querySelector("#btnInsertFilmslideData").addEventListener("click", asyn
 
     if (!folderItem) {
       console.log("Selected item is not a folder");
-      folderStatusEl.textContent = "❌ Selected item is not a folder";
+      if (folderStatusEl) folderStatusEl.textContent = "❌ Selected item is not a folder";
+      if (statusEl) statusEl.textContent = "❌ Selected item is not a folder";
       return;
     }
 
@@ -586,12 +615,10 @@ document.querySelector("#btnInsertFilmslideData").addEventListener("click", asyn
       console.log(`✅ Filmslide data insertion successful: ${result.message}`);
       statusEl.textContent = `✅ ${result.message}`;
       folderStatusEl.textContent = `📁 "${folderName}" - Complete`;
-      if (filmslideStatusEl) filmslideStatusEl.textContent = `✅ ${result.message}`;
     } else {
       console.log(`❌ Filmslide data insertion failed: ${result.error}`);
       statusEl.textContent = `❌ ${result.error}`;
       folderStatusEl.textContent = `📁 "${folderName}" - Error`;
-      if (filmslideStatusEl) filmslideStatusEl.textContent = `❌ ${result.error}`;
     }
 
     console.log("Filmslide data insertion workflow complete");
@@ -599,7 +626,6 @@ document.querySelector("#btnInsertFilmslideData").addEventListener("click", asyn
     console.error("Error inserting filmslide data:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     statusEl.textContent = `❌ Error: ${errorMessage}`;
-    if (filmslideStatusEl) filmslideStatusEl.textContent = `❌ Error: ${errorMessage}`;
     console.log(`Error details: ${error instanceof Error ? error.stack : String(error)}`);
   }
 });
