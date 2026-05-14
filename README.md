@@ -37,3 +37,5 @@ The plugin extensively uses the Premiere Pro UXP API. For a detailed reference, 
 ## License
 
 This project is licensed under the MIT License.
+
+
