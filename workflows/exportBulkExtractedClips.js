@@ -120,7 +120,7 @@ async function exportBulkExtractedClips(sep, clipExtractPath, videoTrackIndex, e
     }
 
     // Preset path — adjust version folder if needed
-    const presetPath = `D:${sep}JuliansDev${sep}AdobePremierePro${sep}kipromanager${sep}payloads${sep}v26${sep}ALPINALE_Extracts_QT_h264_medium_quality.epr`;
+    const presetPath = `D:${sep}JuliansDev${sep}AdobePremierePro${sep}jdsequencetoolkit${sep}payloads${sep}v26${sep}ALPINALE_Extracts_QT_h264_medium_quality.epr`;
     console.log(`[3/5] Preset path: ${presetPath}`);
 
     // exportArea = false → AME uses sequence in/out points (not work area)

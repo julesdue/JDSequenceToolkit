@@ -31,6 +31,18 @@ body {
 #tab-nav {
   display: flex;
   gap: 0;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tab-nav-left {
+  display: flex;
+  gap: 0;
+}
+
+.tab-nav-right {
+  display: flex;
+  gap: 0;
 }
 
 divider {
@@ -269,6 +281,11 @@ my-button.tab-btn.tab-btn-middle {
 my-button.tab-btn.tab-btn-last {
   border-top-left-radius: 0px;
   border-bottom-left-radius: 0px;
+}
+
+my-button.tab-btn.tab-btn-settings {
+  border-radius: 4px;
+  margin-left: 8px;
 }
 
 

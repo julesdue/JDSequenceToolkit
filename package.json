@@ -1,7 +1,7 @@
 {
-  "name": "kipromanager",
-  "version": "1.0.0",
-  "description": "UXP plugin for prepping and creating files for playback utelizing the hardware AJA KiPro Playback.",
+  "name": "jdsequencetoolkit",
+  "version": "1.1.0",
+  "description": "UXP plugin for sequence management and clip manipulation in Adobe Premiere Pro.",
   "author": "Julian Duenser",
   "license": "Apache-2.0",
   "devDependencies": {

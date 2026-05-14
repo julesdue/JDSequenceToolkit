@@ -5,7 +5,7 @@ const path = require('path');
 const { getEnvironmentInfo } = require("./lib/getVersionAwareResources.js");
 const { canUseExecuteScript } = require("./lib/canUseExecuteScript.js");
 
-console.log("KiPro Manager plugin loaded");
+console.log("JDSequenceToolkit plugin loaded");
 console.log(ppro);
 
 // === Debug: Test ExecuteScript capability at startup ===
@@ -629,6 +629,48 @@ document.querySelector("#btnInsertFilmslideData").addEventListener("click", asyn
     console.log(`Error details: ${error instanceof Error ? error.stack : String(error)}`);
   }
 });
+
+// Listener for save settings button
+const btnSaveSettings = document.querySelector("#btnSaveSettings");
+if (btnSaveSettings) {
+  btnSaveSettings.addEventListener("click", () => {
+    console.log("Save Settings button clicked");
+    const statusEl = document.getElementById("settingsStatusText");
+
+    try {
+      // Get settings values from inputs
+      const defaultBlackFrameEl = document.getElementById("input-default-black-frame-name");
+      const defaultMogrtEl = document.getElementById("input-default-mogrt-name");
+
+      const defaultBlackFrameName = (defaultBlackFrameEl instanceof HTMLInputElement) ? defaultBlackFrameEl.value : "schwarz_frame";
+      const defaultMogrtName = (defaultMogrtEl instanceof HTMLInputElement) ? defaultMogrtEl.value : "ALPINALE_filmvorspannslides";
+
+      // Save to memory storage
+      const settings = {
+        defaultBlackFrameName: defaultBlackFrameName || "schwarz_frame",
+        defaultMogrtName: defaultMogrtName || "ALPINALE_filmvorspannslides",
+        savedAt: new Date().toISOString()
+      };
+
+      // Store in memory
+      window.pluginSettings = settings;
+
+      if (statusEl) statusEl.textContent = `✅ Settings saved successfully`;
+      console.log("Settings saved:", settings);
+
+      // Update the input fields in Sequence Creation tab with saved values
+      const blackFrameInput = document.getElementById("input-black-frame-name");
+      const mogrtInput = document.getElementById("input-mogrt-name");
+
+      if (blackFrameInput instanceof HTMLInputElement) blackFrameInput.value = settings.defaultBlackFrameName;
+      if (mogrtInput instanceof HTMLInputElement) mogrtInput.value = settings.defaultMogrtName;
+
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      if (statusEl) statusEl.textContent = `❌ Error saving settings: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  });
+}
 
 } // end setupButtonListeners
 
