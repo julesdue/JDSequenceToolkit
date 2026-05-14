@@ -1,12 +1,74 @@
-# Starter Premiere Plugin (Vanilla)
+# JDSequenceToolkit
 
-This starter plugin is a good place to get started when developing for Premiere Pro. It does not rely on any frameworks or build steps -- hence the name "Vanilla".
+JDSequenceToolkit is a UXP-based Adobe Premiere Pro plugin for professional sequence and clip management. It provides a suite of tools to automate repetitive tasks, streamline workflows, and enhance productivity within Premiere Pro.
 
-## Load into Premiere Pro
+This toolkit is built with vanilla JavaScript and UXP, ensuring a lightweight footprint and direct access to the Premiere Pro API.
 
-Make sure Premiere Pro is up and running first. First, add the plugin to the "Developer Workspace" in the UXP Developer Tools (UDT) application.
+## Features
 
-- If you selected "Create Plugin..." earlier, it will have already be there with the plugin ID and name you specified.
-- Otherwise, click "Add Plugin" and select the `manifest.json` file in the corresponding plugin folder.
+- **Automated Sequence Creation**: Generate sequences automatically from the contents of a project bin.
+- **Bulk Clip & Sequence Export**: Export multiple clips or sequences to Adobe Media Encoder with specified presets.
+- **MOGRT Data Population**: Populate Motion Graphics Templates (MOGRTs) with data from a CSV file.
+- **Advanced Clip Manipulation**: Perform complex clip operations and manipulations with precision.
 
-Click the ••• button next to the corresponding workspace entry, and click "Load". Switch over to Premiere Pro, and the plugin's panel will be running.
+## Project Structure
+
+The project is organized into several key directories:
+
+- **`workflows/`**: Contains the main entry points for the plugin's features.
+- **`lib/`**: A collection of reusable helper functions and utilities.
+- **`docs/`**: Detailed documentation, API references, and guides.
+- **`payloads/`**: Version-specific export presets and other resources.
+- **`stylesheets/`**: CSS for styling the plugin's user interface.
+
+A more detailed breakdown of the project structure can be found in [docs/project-structure.md](docs/project-structure.md).
+
+## Core Concepts
+
+### Action Pattern (v26+)
+
+For modifying project state, the toolkit uses the `executeTransaction` pattern within a `lockedAccess` block. This ensures that all changes are grouped into a single undoable action in Premiere Pro.
+
+```javascript
+const project = await ppro.Project.getActiveProject();
+
+await project.lockedAccess(async () => {
+  project.executeTransaction((compoundAction) => {
+    const action = param.createSetValueAction(kfEntry);
+    compoundAction.addAction(action);
+  });
+});
+```
+
+### MOGRT Parameter Modification
+
+The toolkit can modify parameters of Motion Graphics Templates (MOGRTs). It traverses the component chain of a clip to find the desired parameter and then uses the action pattern to update its value.
+
+**Note:** There is a known issue with modifying text parameters in some versions of Premiere Pro. See [docs/mogrt-text-param-mutation-blocking-issue.md](docs/mogrt-text-param-mutation-blocking-issue.md) for more details.
+
+### Version-Aware Resource Loading
+
+The plugin can detect the version of Premiere Pro it is running on and load the appropriate resources (like export presets) from the `payloads/` directory.
+
+## API Reference
+
+The plugin extensively uses the Premiere Pro UXP API. A compact reference of the most commonly used classes and methods is available in [docs/doc_classes.md](docs/doc_classes.md).
+
+For a quick reference on MOGRT manipulation, see [docs/mogrt_uxp_quick_reference_compact.md](docs/mogrt_uxp_quick_reference_compact.md).
+
+## Styling
+
+The user interface is styled to match the look and feel of Adobe Premiere Pro, with support for different themes (Light, Dark, Darkest). The styling guide can be found in [docs/styling-guide.md](docs/styling-guide.md).
+
+## Getting Started
+
+1.  **Installation**: Place the plugin folder in the UXP extensions folder for Premiere Pro.
+2.  **Access**: Open the plugin from the `Extensions` menu in Premiere Pro.
+
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+## License
+
+This project is licensed under the MIT License.
