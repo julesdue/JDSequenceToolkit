@@ -4,6 +4,10 @@ JDSequenceToolkit is a UXP-based Adobe Premiere Pro plugin for professional sequ
 
 This toolkit is built with vanilla JavaScript and UXP, ensuring a lightweight footprint and direct access to the Premiere Pro API.
 
+<img width="1080" height="1080" alt="addon_header" src="https://github.com/user-attachments/assets/9388b2e3-fd57-40b6-b4a8-dc874e01257d" />
+
+
+
 ## Main Features
 
 - **Automated Sequence Creation**: Generate sequences automatically from the contents of a project bin.
