@@ -12,8 +12,12 @@ This toolkit is built with vanilla JavaScript and UXP, ensuring a lightweight fo
 
 - **Automated Sequence Creation**: Generate sequences automatically from the contents of a project bin.
 - **Bulk Clip & Sequence Export**: Export multiple clips or sequences to Adobe Media Encoder with specified presets.
-- **MOGRT Data Population**: Populate Motion Graphics Templates (MOGRTs) with data from a CSV file.
+- **MOGRT Data Population**: Populate Motion Graphics Templates (MOGRTs) with data from a CSV file. **Currently not possible wihtout the Legay addon.**
 - **Advanced Clip Manipulation**: Perform complex clip operations and manipulations with precision.
+
+### Additional legacy addon
+
+To use the full intented potential of this addon, also install [JDSequenceToolkit Legay](https://github.com/julesdue/JDSequenceToolkit-legacy) as .mogrt operations are still not availalble in UXP. 
 
 ## How to use it
 
