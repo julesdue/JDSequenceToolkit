@@ -28,6 +28,9 @@ async function insertMultipleClips(folderItem, clipLengthSeconds, startPercent) 
     }
 
     // collect media items from folder
+    // NOTE: FolderItem.getItems() order is API-defined, not guaranteed to match the
+    // Project panel's visible sort — so we explicitly sort by name (natural order) to
+    // match Premiere's default Name-sorted bin view.
     const rawItems = await folderItem.getItems();
     const mediaItems = [];
     for (const item of rawItems) {
@@ -36,6 +39,7 @@ async function insertMultipleClips(folderItem, clipLengthSeconds, startPercent) 
             mediaItems.push(clipItem);
         }
     }
+    mediaItems.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
     console.log(`Found ${mediaItems.length} media items in: ${folderName}`);
 
     if (mediaItems.length === 0) {
