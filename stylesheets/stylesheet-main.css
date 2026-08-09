@@ -208,6 +208,12 @@ sp-checkbox {
   margin: 0px;
 }
 
+/* Slider Styling */
+sp-slider {
+  width: 100%;
+  margin: 4px 0;
+}
+
 /* Button Styling */
 my-button {
   display: inline-block;

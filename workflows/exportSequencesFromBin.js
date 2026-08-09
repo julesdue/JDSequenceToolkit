@@ -1,6 +1,14 @@
+// @ts-nocheck
 const { sendToMEwithPreset } = require('../lib/sendToAMEwithPreset.js');
-const { getPresetPath } = require('../lib/getVersionAwareResources.js');
+const { getPresetPath, getEnvironmentInfo } = require('../lib/getVersionAwareResources.js');
 const { ensureOutputPathExists } = require('../lib/ensureOutputPathExists.js');
+
+// AME export preset filenames — versioned per Premiere major version since the
+// files themselves embed "ppro-v{version}" in their name.
+const SEQUENCE_EXPORT_PRESET_BY_VERSION = {
+    '26': 'ALP_KiPro_2-5_ppro-v26_ndxhd-hqx10bit_FHD_8ChMono_48kHz_24bit_23LUFs.epr',
+    '27': 'ALP_KiPro_2-5_ppro-v27_ndxhd-hqx10bit_FHD_8ChMono_48kHz_24bit_23LUFs.epr',
+};
 
 const ppro = require("premierepro");
 
@@ -62,13 +70,18 @@ async function exportSequencesFromBin(sep, folderItem, exportBasePath) {
         return { exported: 0, failed: 0 };
     }
 
-    // Step 4: resolve preset path
-    const presetName = 'KiPro_ndxhd-hqx10bit_FHD_8ChMono_48kHz_24bit_23LUFs_ver2-5.epr';
+    // Step 4: resolve preset path (versioned filename — see SEQUENCE_EXPORT_PRESET_BY_VERSION)
+    const { majorVersion } = getEnvironmentInfo();
+    const presetName = SEQUENCE_EXPORT_PRESET_BY_VERSION[majorVersion];
+    if (!presetName) {
+        console.error(`[4/5] No known export preset filename for Premiere v${majorVersion}`);
+        return { exported: 0, failed: sequences.length, error: `No export preset configured for Premiere v${majorVersion}` };
+    }
     console.log(`[4/5] Resolving preset path for: ${presetName}`);
     const presetPath = await getPresetPath(presetName);
     if (!presetPath) {
         console.error(`[4/5] Could not resolve preset path — aborting export`);
-        return { exported: 0, failed: sequences.length };
+        return { exported: 0, failed: sequences.length, error: `Preset not found: ${presetName}` };
     }
     console.log(`[4/5] Preset resolved: ${presetPath}`);
 

@@ -215,6 +215,7 @@ if (document.readyState === "loading") {
 const { createSequencesFromBin } = require("./workflows/createSequencesFromBin.js");
 const { exportSequencesFromBin } = require("./workflows/exportSequencesFromBin.js");
 const { exportBulkExtractedClips } = require("./workflows/exportBulkExtractedClips.js");
+const { insertMultipleClips } = require("./workflows/insertMultipleClips.js");
 const { populateFilmslides } = require("./workflows/populateFilmslides.js");
 const { openUXPFileDialog } = require("./lib/openUXPFileDialog.js");
 const uxp = require('uxp');
@@ -431,6 +432,8 @@ document.querySelector("#btnExportSequences").addEventListener("click", async ()
     console.log(`Done — queued ${result.exported}, failed ${result.failed} for bin: ${folderItem.name}`);
     if (result.exported === 0 && result.failed === 0) {
       statusEl.textContent = `⚠️ No sequences found in "${folderItem.name}"`;
+    } else if (result.failed > 0 && result.exported === 0 && result.error) {
+      statusEl.textContent = `❌ ${result.error}`;
     } else if (result.failed > 0 && result.exported === 0) {
       statusEl.textContent = `❌ Failed to queue sequences — is Adobe Media Encoder open?`;
     } else if (result.failed > 0) {
@@ -442,6 +445,67 @@ document.querySelector("#btnExportSequences").addEventListener("click", async ()
     console.error(`Error exporting sequences for bin: ${folderItem.name}`, error);
     statusEl.textContent = `❌ Error: ${error.message || error}`;
     alert(`Failed to export sequences: ${error.message || error}`);
+  }
+});
+
+
+
+// Live label for the "Insert Multiple Clips" start-position slider
+document.querySelector("#input-insert-start-percent")?.addEventListener("input", (e) => {
+  const label = document.getElementById("insertClipStartPercentLabel");
+  if (label) label.textContent = `${/** @type {HTMLInputElement} */ (e.target).value}%`;
+});
+
+// Listener for insert multiple clips button
+document.querySelector("#btnInsertMultipleClips").addEventListener("click", async () => {
+  console.log("Insert Multiple Clips button clicked");
+  const statusEl = document.getElementById("insertMultipleClipsStatusText");
+
+  // Resolve selected bin from project panel
+  let folderItem = null;
+  try {
+    const project = await ppro.Project.getActiveProject();
+    const projectSelection = await ppro.ProjectUtils.getSelection(project);
+    const selection = await projectSelection.getItems();
+
+    if (!selection || selection.length === 0) {
+      statusEl.textContent = "❌ No bin selected — select a bin in the project panel first";
+      alert("No bin selected.\nPlease select a bin in the project panel first.");
+      return;
+    }
+
+    const selectedItem = selection[0];
+    folderItem = ppro.FolderItem.cast(selectedItem);
+    if (!folderItem) {
+      statusEl.textContent = "❌ Selected item is not a bin";
+      alert("Selected item is not a bin.\nPlease select a bin (folder) in the project panel.");
+      return;
+    }
+  } catch (e) {
+    statusEl.textContent = "❌ No bin in project panel selected";
+    alert(`No bin in project panel selected:\n${e.message || e}`);
+    return;
+  }
+
+  const clipLengthSeconds = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById("input-insert-clip-length")).value) || 5;
+  const startPercent = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById("input-insert-start-percent")).value) || 0;
+  console.log(`Clip length: ${clipLengthSeconds}s, start percent: ${startPercent}%`);
+  statusEl.textContent = `Inserting clips from "${folderItem.name}"...`;
+
+  try {
+    const result = await insertMultipleClips(folderItem, clipLengthSeconds, startPercent);
+    console.log(`Done — inserted ${result.inserted}, skipped ${result.skipped} for bin: ${folderItem.name}`);
+    if (result.inserted === 0 && result.skipped === 0) {
+      statusEl.textContent = `⚠️ No movie clips found in "${folderItem.name}"`;
+    } else if (result.skipped > 0) {
+      statusEl.textContent = `⚠️ Inserted ${result.inserted} clip(s), skipped ${result.skipped}`;
+    } else {
+      statusEl.textContent = `✅ Inserted ${result.inserted} clip(s) into the active sequence`;
+    }
+  } catch (error) {
+    console.error(`Error inserting clips for bin: ${folderItem.name}`, error);
+    statusEl.textContent = `❌ Error: ${error.message || error}`;
+    alert(`Failed to insert clips: ${error.message || error}`);
   }
 });
 
@@ -464,9 +528,19 @@ document.querySelector("#btnExtractClips").addEventListener("click", async () =>
   if (statusEl) statusEl.textContent = "Extracting clips...";
 
   try {
-    await exportBulkExtractedClips(sep, clipExtractPath, videoTrackIndex, exportEntireStack);
-    console.log(`Done sending extracted clips to MediaEncoder`);
-    if (statusEl) statusEl.textContent = `✅ Done — clips sent to Media Encoder`;
+    const result = await exportBulkExtractedClips(sep, clipExtractPath, videoTrackIndex, exportEntireStack);
+    console.log(`Done — queued ${result.exported}, failed ${result.failed}`);
+    if (result.error) {
+      if (statusEl) statusEl.textContent = `❌ ${result.error}`;
+    } else if (result.exported === 0 && result.failed === 0) {
+      if (statusEl) statusEl.textContent = `⚠️ No clips found to extract`;
+    } else if (result.failed > 0 && result.exported === 0) {
+      if (statusEl) statusEl.textContent = `❌ Failed to queue clips — is Adobe Media Encoder open?`;
+    } else if (result.failed > 0) {
+      if (statusEl) statusEl.textContent = `⚠️ Queued ${result.exported} to AME, ${result.failed} failed`;
+    } else {
+      if (statusEl) statusEl.textContent = `✅ Queued ${result.exported} clip(s) to Adobe Media Encoder`;
+    }
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error(`Error extracting clips from path: ${clipExtractPath}`, error);

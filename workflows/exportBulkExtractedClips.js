@@ -1,9 +1,18 @@
+// @ts-nocheck
 // import modules
 const { sendToMEwithPreset } = require('../lib/sendToAMEwithPreset.js');
 const { executeCompoundAction } = require('../lib/executeCompoundAction.js');
+const { getPresetPath, getEnvironmentInfo } = require('../lib/getVersionAwareResources.js');
 
 // global objects
 const ppro = require("premierepro");
+
+// AME clip-extract preset filenames — versioned per Premiere major version since the
+// files themselves embed "ppro-v{version}" in their name.
+const CLIP_EXTRACT_PRESET_BY_VERSION = {
+    '26': 'ALP_extracts_1-1_ppro_v26_QT_h264_medium_quality.epr',
+    '27': 'ALP_extracts_1-1_ppro_v27_QT_h264_medium_quality.epr',
+};
 
 /**
  * Export each clip on the selected video track(s) as separate AME render jobs.
@@ -119,9 +128,23 @@ async function exportBulkExtractedClips(sep, clipExtractPath, videoTrackIndex, e
         return { exported: 0, failed: 0, error: 'No clips found' };
     }
 
-    // Preset path — adjust version folder if needed
-    const presetPath = `D:${sep}JuliansDev${sep}AdobePremierePro${sep}jdsequencetoolkit${sep}payloads${sep}v26${sep}ALPINALE_Extracts_QT_h264_medium_quality.epr`;
-    console.log(`[3/5] Preset path: ${presetPath}`);
+    // Resolve preset path from the version-aware payloads/v{version}/ folder
+    // (filename is versioned — see CLIP_EXTRACT_PRESET_BY_VERSION).
+    // getPresetPath() already logs an error and shows a popup (with the list of
+    // presets it did find) when the expected .epr is missing for this Premiere version.
+    const { majorVersion } = getEnvironmentInfo();
+    const presetName = CLIP_EXTRACT_PRESET_BY_VERSION[majorVersion];
+    if (!presetName) {
+        console.error(`[3/5] No known clip-extract preset filename for Premiere v${majorVersion}`);
+        return { exported: 0, failed: allClips.length, error: `No clip-extract preset configured for Premiere v${majorVersion}` };
+    }
+    console.log(`[3/5] Resolving preset path for: ${presetName}`);
+    const presetPath = await getPresetPath(presetName);
+    if (!presetPath) {
+        console.error(`[3/5] Could not resolve preset path — aborting extraction`);
+        return { exported: 0, failed: allClips.length, error: `Preset not found: ${presetName}` };
+    }
+    console.log(`[3/5] Preset resolved: ${presetPath}`);
 
     // exportArea = false → AME uses sequence in/out points (not work area)
     const exportArea = false;

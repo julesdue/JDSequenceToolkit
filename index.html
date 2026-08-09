@@ -17,6 +17,7 @@
               <my-button class="tab-btn tab-btn-first active" data-tab="tab-sequences">Sequence Creation</my-button>
               <my-button class="tab-btn tab-btn-middle" data-tab="tab-filmslide">Filmslide Data</my-button>
               <my-button class="tab-btn tab-btn-middle" data-tab="tab-export-bin">Export from Bin</my-button>
+              <my-button class="tab-btn tab-btn-middle" data-tab="tab-insert-multiple-clips">Insert Multiple Clips</my-button>
               <my-button class="tab-btn tab-btn-last" data-tab="tab-clip-extractor">Extract Bulk Clips</my-button>
             </div>
             <div class="tab-nav-right">
@@ -106,6 +107,49 @@
                 - Set the export folder path or use Browse to pick one.
                 <br>
                 - Click Export Sequences to ME to queue all sequences in the bin to Adobe Media Encoder.
+              </p>
+            </div>
+          </div>
+
+          <!-- Tab Content: Insert Multiple Clips -->
+          <div id="tab-insert-multiple-clips" class="tab-content">
+            <div class="tab-left">
+              <sp-body id="plugin-body" style="position:relative;">
+                <h5>Clip length (seconds)</h5>
+                <input type="number" id="input-insert-clip-length" placeholder="Enter clip length in seconds" value="5" min="1" />
+                <divider-line></divider-line>
+
+                <h5>Start position <span id="insertClipStartPercentLabel">50%</span></h5>
+                <sp-slider id="input-insert-start-percent" min="0" max="100" step="1" value="50"></sp-slider>
+                <divider></divider>
+
+                <my-button id="btnInsertMultipleClips">Insert clips from selected bin to active sequence</my-button>
+                <h5 id="insertMultipleClipsStatusText"></h5>
+              </sp-body>
+            </div>
+            <div class="tab-divider"></div>
+            <div class="tab-right">
+              <h4>Features</h4>
+              <p>
+                - Inserts every movie clip from the selected bin into the active sequence, one after another.
+                <br>
+                - The in point of each clip is calculated as a percentage of the clip's total duration.
+                <br>
+                - The out point is set to exactly "Clip length" seconds after the in point.
+                <br><br>
+              </p>
+
+              <h4>How to</h4>
+              <p>
+                - Select a bin in the project panel containing the movie clips to insert.
+                <br>
+                - Make sure a sequence is open and active in the timeline.
+                <br>
+                - Set the clip length (in seconds) to use for every inserted clip.
+                <br>
+                - Set the start position slider to choose where in each source clip the in point should be placed (as a percentage of its duration).
+                <br>
+                - Click the button to insert all clips from the bin into the active sequence, one after another.
               </p>
             </div>
           </div>
@@ -242,7 +286,7 @@
 
     <footer>
       <p id="footer-version-info">PPro — · UXP —</p>
-      <p>JDSequenceToolkit Extension ver1.1.0</p>
+      <p>JDSequenceToolkit Extension ver1.2.0</p>
     </footer>
 
   </body>
