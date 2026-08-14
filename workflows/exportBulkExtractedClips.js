@@ -75,14 +75,18 @@ async function exportBulkExtractedClips(sep, clipExtractPath, videoTrackIndex, e
     try {
         const seqInPoint = await activeSequence.getInPoint();
         const seqOutPoint = await activeSequence.getOutPoint();
-        const seqStart = ppro.TickTime.createWithSeconds(0);
+        const seqStart = ppro.TickTime.TIME_ZERO;
         const seqEnd = await activeSequence.getEndTime();
 
-        // Check if in/out points are different from sequence start/end (meaning a range is defined)
-        if (seqInPoint.seconds !== seqStart.seconds || seqOutPoint.seconds !== seqEnd.seconds) {
+        // Check if in/out points are different from sequence start/end (meaning a range is defined).
+        // If either point is missing/invalid (e.g. never set), treat it as "no range" — use the entire sequence.
+        const hasValidInOut = seqInPoint && seqOutPoint && seqInPoint.seconds >= seqStart.seconds && seqOutPoint.seconds >= seqStart.seconds;
+        if (hasValidInOut && (seqInPoint.seconds !== seqStart.seconds || seqOutPoint.seconds !== seqEnd.seconds)) {
             rangeInPoint = seqInPoint;
             rangeOutPoint = seqOutPoint;
             console.log(`[2/5] Range detected: ${rangeInPoint.seconds}s – ${rangeOutPoint.seconds}s`);
+        } else {
+            console.log('[2/5] No valid in/out range set — using entire sequence.');
         }
     } catch (e) {
         console.warn('[2/5] Could not read sequence in/out points:', e);
