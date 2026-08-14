@@ -600,29 +600,29 @@ document.querySelector("#btnDownloadSampleCSV").addEventListener("click", async 
   const statusEl = document.getElementById("csvStatusText");
 
   try {
-    // @ts-ignore — localFileSystem exists in UXP runtime but is missing from type defs
-    const folder = await uxp.storage.localFileSystem.getFolder();
-    if (!folder) {
-      statusEl.textContent = "Download cancelled";
-      return;
-    }
-
     // Get the sample CSV file from the payloads/data directory
-    // @ts-ignore
+    // @ts-ignore — localFileSystem exists in UXP runtime but is missing from type defs
     const pluginFolder = await uxp.storage.localFileSystem.getPluginFolder();
     const payloadsFolder = await pluginFolder.getEntry("payloads");
     const dataFolder = await payloadsFolder.getEntry("data");
     const sampleFile = await dataFolder.getEntry("sample_data.csv");
 
-    // Create a new file in the selected folder with the same name
-    const newFile = await folder.createFile("sample_data.csv", { overwrite: true });
+    // Open a native save dialog so the user picks the destination and filename
+    // @ts-ignore — localFileSystem exists in UXP runtime but is missing from type defs
+    const newFile = await uxp.storage.localFileSystem.getFileForSaving("sample_data.csv", {
+      types: ["csv"],
+    });
+    if (!newFile) {
+      statusEl.textContent = "Download cancelled";
+      return;
+    }
 
-    // Read the sample file and write to the new location
+    // Read the sample file and write to the chosen location
     const data = await sampleFile.read();
     await newFile.write(data);
 
     statusEl.textContent = "Sample CSV downloaded successfully";
-    console.log("Sample CSV file downloaded to:", folder.name);
+    console.log("Sample CSV file downloaded to:", newFile.nativePath);
   } catch (error) {
     console.error("Error downloading sample CSV:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
