@@ -1,6 +1,6 @@
 {
   "name": "jdsequencetoolkit",
-  "version": "1.2.1",
+  "version": "1.4.0",
   "description": "UXP plugin for sequence management and clip manipulation in Adobe Premiere Pro.",
   "author": "Julian Duenser",
   "license": "Apache-2.0",
